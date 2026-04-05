@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Authentication</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --frame: 0px;
+      --header-height: 25px;
+      --radius: 0px;
+      --border: transparent;
+      --glass: transparent;
+      --text: rgba(245, 247, 250, 0.94);
+      --chrome: rgba(128, 128, 132, 0.78);
+      --chrome-line: rgba(255, 255, 255, 0.09);
+      --shadow: 0 20px 52px rgba(0, 0, 0, 0.42);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    }
+
+    .shell {
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      box-shadow: none;
+      backdrop-filter: blur(28px) saturate(1.10);
+      -webkit-backdrop-filter: blur(28px) saturate(1.10);
+    }
+
+    .header {
+      display: flex;
+      height: var(--header-height);
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 10px;
+      app-region: drag;
+      -webkit-app-region: drag;
+    }
+
+    /* Identity section showing title and favicon */
+    .identity {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 12px;
+      flex: 1;
+      min-width: 0;
+      app-region: no-drag;
+      -webkit-app-region: no-drag;
+    }
+
+    .identity img {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .identity span {
+      font-size: 11px;
+      color: var(--text);
+      opacity: 0.8;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 200px;
+    }
+
+    .traffic {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      app-region: no-drag;
+      -webkit-app-region: no-drag;
+    }
+
+    .traffic button {
+      width: 12px;
+      height: 12px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+    }
+
+    .traffic .close {
+      background: #8e8e93;
+      transition: background 0.1s ease;
+    }
+
+    .traffic .close:hover {
+      background: #ff453a;
+    }
+
+    .traffic .minimize, .traffic .maximize {
+      display: none;
+    }
+
+    .content {
+      position: absolute;
+      inset: var(--header-height) 0 0 0;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0)),
+        linear-gradient(180deg, rgba(12,14,19,0.2), rgba(7,9,14,0.34));
+    }
+
+    .content::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="header">
+      <div class="traffic">
+        <button id="close" class="close" type="button" aria-label="Close"></button>
+        <button id="minimize" class="minimize" type="button" aria-label="Minimize"></button>
+        <button id="maximize" class="maximize" type="button" aria-label="Maximize"></button>
+      </div>
+      <div class="identity">
+        <img id="favicon" hidden src="" alt="" />
+        <span id="title"></span>
+      </div>
+    </div>
+    <div class="content"></div>
+  </div>
+
+  <script>
+    const titleEl = document.getElementById('title');
+    const faviconEl = document.getElementById('favicon');
+    const closeEl = document.getElementById('close');
+    const minimizeEl = document.getElementById('minimize');
+    const maximizeEl = document.getElementById('maximize');
+
+    closeEl?.addEventListener('click', () => {
+      window.electronAPI?.authPopup?.close?.();
+    });
+
+    minimizeEl?.addEventListener('click', () => {
+      window.electronAPI?.authPopup?.minimize?.();
+    });
+
+    maximizeEl?.addEventListener('click', () => {
+      window.electronAPI?.authPopup?.toggleMaximize?.();
+    });
+
+    window.electronAPI?.authPopup?.onState?.((state) => {
+      const title = state?.title || state?.host || 'Authentication';
+      titleEl.textContent = title;
+      document.title = title;
+
+      if (state?.favicon) {
+        faviconEl.src = state.favicon;
+        faviconEl.hidden = false;
+      } else {
+        faviconEl.removeAttribute('src');
+        faviconEl.hidden = true;
+      }
+    });
+  </script>
+</body>
+</html>

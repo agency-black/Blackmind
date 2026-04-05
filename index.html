@@ -1,0 +1,4035 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackmind</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --window-edge-inset: 7px;
+            --window-left-sidebar-inset: 207px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+        }
+
+        .window-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: transparent;
+            -webkit-app-region: drag;
+        }
+
+        .notch-container {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            -webkit-app-region: no-drag;
+            display: none;
+        }
+
+        .notch-svg {
+            width: 300px;
+            height: 20px;
+        }
+
+        .main-canvas-wrapper {
+            height: 100%;
+            flex: 1;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            min-width: 0;
+            will-change: transform;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+
+
+        .canvas-task-container {
+            position: absolute;
+            top: 7px;
+            left: var(--window-edge-inset);
+            right: var(--window-edge-inset);
+            bottom: var(--window-edge-inset);
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+            pointer-events: none;
+            gap: 0;
+            z-index: 5000;
+            transition: top 0.3s ease, left 0.4s cubic-bezier(0.4, 0, 0.2, 1), gap 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-app-region: no-drag;
+        }
+
+        body.has-tabs.top-chrome-visible .canvas-task-container {
+            top: 30px;
+        }
+
+        body:not(.sidebar-active) .canvas-task-container {
+            left: var(--window-left-sidebar-inset);
+        }
+
+        #sidebar-hit-area {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--window-edge-inset);
+            height: 100vh;
+            z-index: 9000;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        #sidebar-close-overlay {
+            position: fixed;
+            top: 0;
+            left: var(--window-left-sidebar-inset);
+            right: 0;
+            bottom: 0;
+            z-index: 8500;
+            background: transparent;
+            display: none;
+            cursor: default;
+        }
+
+        body:not(.sidebar-active) #sidebar-hit-area {
+            pointer-events: none;
+        }
+
+        body:not(.sidebar-active) #sidebar-close-overlay {
+            display: block;
+        }
+
+        #top-chrome-hit-area {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            z-index: 5900;
+            background: transparent;
+            pointer-events: auto;
+        }
+
+        #sidebar-react-root {
+            position: fixed;
+            top: 7px;
+            left: var(--window-edge-inset);
+            width: 200px;
+            bottom: var(--window-edge-inset);
+            border-radius: 10px;
+            z-index: 8000;
+            overflow: hidden;
+            pointer-events: auto;
+            -webkit-app-region: no-drag;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(0);
+            transition:
+                top 0.3s ease,
+                transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.2s ease;
+            will-change: transform, opacity;
+        }
+
+        body.has-tabs #sidebar-react-root {
+            top: 30px;
+        }
+
+        body.has-tabs:not(.top-chrome-visible) #sidebar-react-root {
+            top: 7px;
+        }
+
+        body.sidebar-active #sidebar-react-root {
+            transform: translateX(calc(-100% - var(--window-edge-inset)));
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar-v2-svg {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+            display: block;
+            pointer-events: auto;
+        }
+
+        .canvas-task-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none;
+        }
+
+        .dock-icon {
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+            transform-box: fill-box;
+            will-change: transform;
+        }
+
+        .dock-icon:hover {
+            transform: scale3d(1.167, 1.167, 1);
+        }
+
+        .dock-icon-area,
+        .toolbar-hit-area {
+            fill: transparent;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        #dock-hit-area {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            bottom: 0;
+            height: var(--window-edge-inset);
+            z-index: 4700;
+            pointer-events: auto;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        #dock-elements {
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        body:not(.dock-open) #dock-elements,
+        body:not(.dock-open) #dock-elements .dock-icon,
+        body:not(.dock-open) #dock-elements .dock-icon-area {
+            pointer-events: none !important;
+        }
+
+        #dock-elements .dock-icon {
+            pointer-events: none;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.dock-open #dock-elements,
+        body.dock-open .dock-icon,
+        body.dock-open .dock-icon-area {
+            pointer-events: auto !important;
+        }
+
+        #dock-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 4550;
+            background: transparent;
+            display: none;
+            pointer-events: auto;
+            cursor: default;
+        }
+
+        .panes-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 1fr 0px 0px;
+            z-index: 5;
+            pointer-events: auto;
+            mask: url(#split-mask);
+            -webkit-mask: url(#split-mask);
+        }
+
+        .splitview-active .panes-container {
+            display: grid;
+        }
+
+        .spacer {
+            background: transparent;
+            pointer-events: none;
+        }
+
+        .webview-pane {
+            pointer-events: auto;
+            position: relative;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        .webview-pane webview {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            /* Smooth crossfade transition */
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #splitview-trigger {
+            cursor: pointer;
+        }
+
+        .canvas-overlay-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 4600;
+            pointer-events: none;
+        }
+
+        #splitview-divider {
+            cursor: col-resize;
+        }
+
+        #divider-handle {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            /* Hardware acceleration */
+            will-change: opacity;
+            transform: translateZ(0);
+        }
+
+        #splitview-divider.active-handle #divider-handle {
+            opacity: 1;
+        }
+
+        #splitview-divider.idle #divider-handle {
+            opacity: 0.25;
+        }
+
+        #splitview-divider:hover #divider-handle {
+            opacity: 1 !important;
+        }
+
+        /* Prevent webviews from capturing mouse events during resize */
+        body.is-resizing webview {
+            pointer-events: none;
+        }
+
+        #menu-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            z-index: 6000;
+            -webkit-app-region: no-drag;
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(calc(-100% + 2px));
+            transition:
+                transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.2s ease;
+            will-change: transform, opacity;
+        }
+
+        body.top-chrome-visible #menu-bar {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        #tabs-react-root {
+            position: absolute;
+            left: 80px;
+            right: 190px;
+            bottom: 0;
+            height: 30px;
+            display: flex;
+            align-items: flex-end;
+            z-index: 7000;
+            pointer-events: auto;
+        }
+
+        #tabs-container {
+            display: none;
+            /* Hidden - vanilla JS still uses it but React displays the tabs */
+        }
+
+        #add-tab-trigger {
+            display: none !important;
+        }
+
+        #add-tab-trigger::before,
+        #add-tab-trigger::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            border-radius: 0.5px;
+        }
+
+        #add-tab-trigger::before {
+            width: 8px;
+            height: 1.5px;
+        }
+
+        #add-tab-trigger::after {
+            width: 1.5px;
+            height: 8px;
+        }
+
+        #add-tab-trigger:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        #menu-bar-toolbar {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 207px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            pointer-events: auto;
+            opacity: 0;
+            z-index: 7010;
+            transition: opacity 0.3s ease;
+            overflow: hidden;
+        }
+
+        #menu-bar-toolbar svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #app-intro-root {
+            position: fixed;
+            inset: 0;
+            z-index: 10030;
+            pointer-events: none;
+            isolation: isolate;
+        }
+
+        /* Toolbar controls: rect fija, glifo animado para evitar flicker */
+        #menu-bar-toolbar .toolbar-control {
+            cursor: pointer;
+        }
+
+        #menu-bar-toolbar .toolbar-icon-frame,
+        #menu-bar-toolbar .toolbar-icon-glyph {
+            pointer-events: none;
+        }
+
+        #menu-bar-toolbar .toolbar-icon-glyph {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-box: fill-box;
+            transform-origin: center;
+            will-change: transform;
+        }
+
+        #menu-bar-toolbar .toolbar-control:hover .toolbar-icon-glyph {
+            transform: scale(1.08);
+        }
+
+        #toolbar-bookmark .toolbar-bookmark-shape {
+            fill: none;
+            stroke: #D1D1D1;
+            transition: fill 0.18s ease, stroke 0.18s ease;
+        }
+
+        #toolbar-bookmark[data-bookmarked="true"] .toolbar-bookmark-shape {
+            fill: #D1D1D1;
+            stroke: #D1D1D1;
+        }
+
+        .menu-tab {
+            padding: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px 6px 0 0;
+            color: white;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease,
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                width 0.3s ease,
+                padding 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
+            white-space: nowrap;
+            width: 40px;
+            min-width: 40px;
+            max-width: 40px;
+            flex: 0 0 auto;
+            z-index: 7001;
+            overflow: visible;
+            /* Hardware acceleration */
+            will-change: background, border-color, box-shadow, width;
+            transform: translateZ(0);
+        }
+
+        .tab-icon-container {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .tab-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+            width: 0;
+            margin-left: 0;
+            transition: opacity 0.3s ease, width 0.3s ease, margin-left 0.3s ease;
+        }
+
+        .menu-tab.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+            width: 120px;
+            min-width: 120px;
+            max-width: 120px;
+            justify-content: flex-start;
+            padding: 0 8px;
+            overflow: hidden;
+        }
+
+        .menu-tab.active .tab-title {
+            opacity: 1;
+            width: auto;
+            margin-left: 6px;
+        }
+
+        .menu-tab:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .tab-icon {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+            object-fit: contain;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        .tab-icon.has-icon {
+            display: block;
+        }
+
+        .tab-close {
+            margin-left: 8px;
+            opacity: 0;
+            font-size: 14px;
+            width: 0;
+            overflow: hidden;
+            transition: opacity 0.3s ease, width 0.3s ease, margin-left 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .menu-tab.active .tab-close,
+        .menu-tab:hover .tab-close {
+            opacity: 0.5;
+            width: 14px;
+        }
+
+        .tab-close:hover {
+            opacity: 1;
+        }
+
+        .webview-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-app-region: no-drag;
+        }
+
+        .webview-container.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        .pane-loader {
+            display: none;
+            position: absolute;
+            inset: 0;
+            z-index: 1200;
+            background: #000000;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: auto;
+        }
+
+        .pane-loader-root {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #active-view-indicator {
+            position: absolute;
+            width: 403px;
+            height: 2px;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 5200;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            -webkit-app-region: no-drag;
+        }
+
+        #active-view-indicator.visible {
+            opacity: 1;
+        }
+
+        #menu-bar>img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: fill;
+            /* Hide the area that contains icons AND the original static clock (76% to 99%) */
+            mask: linear-gradient(90deg, #000 76%, transparent 76.5%, transparent 98.8%, #000 99.2%);
+            -webkit-mask: linear-gradient(90deg, #000 76%, transparent 76.5%, transparent 98.8%, #000 99.2%);
+        }
+
+        .splitview-active #menu-bar>img {
+            /* Remove masking that causes visual overlap artifacts */
+            mask: none;
+            -webkit-mask: none;
+        }
+
+        #menu-bar-clock {
+            display: none;
+        }
+
+        #toolbar-container {
+            display: none !important;
+        }
+
+        #toolbar-container.active {
+            display: block;
+            opacity: 1;
+        }
+
+        #toolbar-svg-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: auto;
+            -webkit-app-region: no-drag;
+            /* Focus on buttons, avoiding the clock area carefully */
+            clip-path: inset(0 12.5% 0 70.0%);
+        }
+
+        #toolbar-svg-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            right: 160px;
+            /* Positioned before the clock */
+            width: 140px;
+            height: 30px;
+            z-index: 6100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            -webkit-app-region: no-drag;
+        }
+
+        #toolbar-container.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+
+        #toolbar-container img {
+            height: 16px;
+            width: auto;
+        }
+
+        #active-view-indicator {
+            position: absolute;
+            width: 403px;
+            height: 2px;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 5200;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            -webkit-app-region: no-drag;
+        }
+
+        #active-view-indicator.visible {
+            opacity: 1;
+        }
+
+        #menu-bar>img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: fill;
+            /* Hide the area that contains icons AND the original static clock (76% to 99%) */
+            mask: linear-gradient(90deg, #000 76%, transparent 76.5%, transparent 98.8%, #000 99.2%);
+            -webkit-mask: linear-gradient(90deg, #000 76%, transparent 76.5%, transparent 98.8%, #000 99.2%);
+        }
+
+        .splitview-active #menu-bar>img {
+            /* Remove masking that causes visual overlap artifacts */
+            mask: none;
+            -webkit-mask: none;
+        }
+
+        #menu-bar-clock {
+            display: none;
+        }
+
+        #toolbar-container {
+            display: none !important;
+        }
+
+        #toolbar-container.active {
+            display: block;
+            opacity: 1;
+        }
+
+        #toolbar-svg-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: auto;
+            -webkit-app-region: no-drag;
+            /* Focus on buttons, avoiding the clock area carefully */
+            clip-path: inset(0 12.5% 0 70.0%);
+        }
+
+        #toolbar-svg-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            right: 160px;
+            /* Positioned before the clock */
+            width: 140px;
+            height: 30px;
+            z-index: 6100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            -webkit-app-region: no-drag;
+        }
+
+        #toolbar-container.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+
+        #toolbar-container img {
+            height: 16px;
+            width: auto;
+        }
+
+        #active-view-indicator {
+            position: absolute;
+            width: 403px;
+            height: 2px;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 5200;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            -webkit-app-region: no-drag;
+        }
+
+        #active-view-indicator.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="top-chrome-hit-area" aria-hidden="true"></div>
+    <div id="menu-bar">
+        <div id="tabs-react-root"></div>
+        <div id="add-tab-trigger"></div>
+        <div id="tabs-container" style="display: none;"></div>
+        <div id="menu-bar-toolbar">
+            <svg width="207" height="30" viewBox="0 0 207 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <line x1="11.1072" y1="4.10723" x2="11.1072" y2="23.8928" stroke="url(#paint0_linear_735_22659)"
+                    stroke-width="0.214453" stroke-linecap="round" />
+
+                <!-- Search Icon Area (11.1 to 48.1) -->
+                <g id="toolbar-search" class="toolbar-control">
+                    <rect x="11.1" y="0" width="37" height="30" fill="white" fill-opacity="0"
+                        style="cursor: pointer;" />
+                    <g class="toolbar-icon-glyph">
+                        <circle cx="28.1" cy="13.6" r="4.2" stroke="#D1D1D1" stroke-width="1.2" />
+                        <path d="M31.25 16.75L34.35 19.85" stroke="#D1D1D1" stroke-width="1.2" stroke-linecap="round" />
+                    </g>
+                </g>
+
+                <line x1="48.1072" y1="4.10723" x2="48.1072" y2="23.8928" stroke="url(#paint1_linear_735_22659)"
+                    stroke-width="0.214453" stroke-linecap="round" />
+
+                <line x1="85.1072" y1="4.10723" x2="85.1072" y2="23.8928" stroke="url(#paint2_linear_735_22659)"
+                    stroke-width="0.214453" stroke-linecap="round" />
+
+                <!-- Back Icon Area -->
+                <g id="toolbar-share" class="toolbar-control">
+                    <rect x="48.1" y="0" width="37" height="30" fill="white" fill-opacity="0"
+                        style="cursor: pointer;" />
+                    <g class="toolbar-icon-glyph">
+                        <path d="M68.35 10.35L63.85 15L68.35 19.65" stroke="#D1D1D1" stroke-width="1.2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </g>
+                </g>
+
+                <line x1="122.107" y1="4.10723" x2="122.107" y2="23.8928" stroke="url(#paint3_linear_735_22659)"
+                    stroke-width="0.214453" stroke-linecap="round" />
+
+                <!-- Refresh Icon Area -->
+                <g id="toolbar-refresh" class="toolbar-control">
+                    <rect x="85.1" y="0" width="37" height="30" fill="white" fill-opacity="0"
+                        style="cursor: pointer;" />
+                    <g class="toolbar-icon-glyph">
+                        <path
+                            d="M107.25 14.2A4.85 4.85 0 0 0 99.75 11.45"
+                            stroke="#D1D1D1" stroke-width="1.2" stroke-linecap="round" />
+                        <path
+                            d="M99.65 15.8A4.85 4.85 0 0 0 107.15 18.55"
+                            stroke="#D1D1D1" stroke-width="1.2" stroke-linecap="round" />
+                        <path d="M99.85 9.4V12.15H102.6" stroke="#D1D1D1" stroke-width="1.2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M107.05 20.6V17.85H104.3" stroke="#D1D1D1" stroke-width="1.2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </g>
+                </g>
+
+                <line x1="159.107" y1="4.10723" x2="159.107" y2="23.8928" stroke="url(#paint4_linear_735_22659)"
+                    stroke-width="0.214453" stroke-linecap="round" />
+
+                <!-- Action/Forward Icon Area -->
+                <g id="toolbar-action" class="toolbar-control">
+                    <rect x="122.1" y="0" width="37" height="30" fill="white" fill-opacity="0"
+                        style="cursor: pointer;" />
+                    <g class="toolbar-icon-glyph">
+                        <path d="M138.55 10.35L143.05 15L138.55 19.65" stroke="#D1D1D1" stroke-width="1.2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </g>
+                </g>
+
+                <line x1="196.107" y1="4.10723" x2="196.107" y2="23.8928" stroke="url(#paint5_linear_735_22659)"
+                    stroke-width="0.214453" stroke-linecap="round" />
+
+                <!-- Bookmark Icon Area -->
+                <g id="toolbar-bookmark" class="toolbar-control" data-bookmarked="false">
+                    <rect x="159.1" y="0" width="37" height="30" fill="white" fill-opacity="0"
+                        style="cursor: pointer;" />
+                    <g class="toolbar-icon-glyph">
+                        <path
+                            class="toolbar-bookmark-shape"
+                            d="M173.55 10.45C173.55 9.89772 173.998 9.45 174.55 9.45H180.45C181.002 9.45 181.45 9.89772 181.45 10.45V19.8C181.45 20.1778 181.053 20.4238 180.716 20.2558L177.5 18.6527L174.284 20.2558C173.947 20.4238 173.55 20.1778 173.55 19.8V10.45Z"
+                            stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+                    </g>
+                </g>
+
+                <defs>
+                    <linearGradient id="paint0_linear_735_22659" x1="10.5" y1="4" x2="10.5" y2="24"
+                        gradientUnits="userSpaceOnUse">
+                        <stop stop-color="white" stop-opacity="0" />
+                        <stop offset="0.480769" stop-color="#CACACA" />
+                        <stop offset="1" stop-color="#999999" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="paint1_linear_735_22659" x1="47.5" y1="4" x2="47.5" y2="24"
+                        gradientUnits="userSpaceOnUse">
+                        <stop stop-color="white" stop-opacity="0" />
+                        <stop offset="0.480769" stop-color="#CACACA" />
+                        <stop offset="1" stop-color="#999999" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="paint2_linear_735_22659" x1="84.5" y1="4" x2="84.5" y2="24"
+                        gradientUnits="userSpaceOnUse">
+                        <stop stop-color="white" stop-opacity="0" />
+                        <stop offset="0.480769" stop-color="#CACACA" />
+                        <stop offset="1" stop-color="#999999" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="paint3_linear_735_22659" x1="121.5" y1="4" x2="121.5" y2="24"
+                        gradientUnits="userSpaceOnUse">
+                        <stop stop-color="white" stop-opacity="0" />
+                        <stop offset="0.480769" stop-color="#CACACA" />
+                        <stop offset="1" stop-color="#999999" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="paint4_linear_735_22659" x1="158.5" y1="4" x2="158.5" y2="24"
+                        gradientUnits="userSpaceOnUse">
+                        <stop stop-color="white" stop-opacity="0" />
+                        <stop offset="0.480769" stop-color="#CACACA" />
+                        <stop offset="1" stop-color="#999999" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="paint5_linear_735_22659" x1="195.5" y1="4" x2="195.5" y2="24"
+                        gradientUnits="userSpaceOnUse">
+                        <stop stop-color="white" stop-opacity="0" />
+                        <stop offset="0.480769" stop-color="#CACACA" />
+                        <stop offset="1" stop-color="#999999" stop-opacity="0" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+    </div>
+    <div id="toolbar-container">
+    </div>
+    <div class="notch-container">
+        <svg class="notch-svg" width="300" height="20" viewBox="0 0 300 20" fill="none"
+            xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0 0 C 12.5 0 12.5 20 25 20 H 275 C 287.5 20 287.5 0 300 0 Z" fill="#0A0A0A" />
+        </svg>
+    </div>
+    <div id="search-modal">
+        <div class="search-container">
+            <div id="search-react-root"></div>
+        </div>
+    </div>
+    <div id="app-intro-root"></div>
+    <div id="sidebar-hit-area"></div>
+    <div id="sidebar-close-overlay"></div>
+    <div id="sidebar-react-root"></div>
+    <div id="dock-hit-area"></div>
+    <div id="dock-backdrop"></div>
+    <div class="canvas-task-container" id="main-container">
+        <div class="main-canvas-wrapper">
+            <svg class="canvas-task-svg" viewBox="0 0 1386 663" fill="none" xmlns="http://www.w3.org/2000/svg"
+                preserveAspectRatio="none">
+                <g clip-path="url(#clip0_595_14217)">
+                    <path id="main-canvas-path" d="" fill="#000000" opacity="0.60" />
+                    <defs>
+                        <clipPath id="clip0_595_14217">
+                            <rect width="100%" height="100%" fill="white" />
+                        </clipPath>
+                        <mask id="split-mask">
+                            <g id="mask-full-group">
+                                <path id="mask-full" d="" fill="white" />
+                            </g>
+                            <g id="mask-split-group" style="display: none;">
+                                <path id="pane-left-mask-path" d="" fill="white" />
+                                <path id="pane-right-mask-path" d="" fill="white" />
+                            </g>
+                        </mask>
+                        <clipPath id="zipper-clip-split">
+                            <rect id="zipper-rect-split" x="0" y="0" width="100%" height="0" />
+                        </clipPath>
+                        <clipPath id="zipper-clip-full">
+                            <rect id="zipper-rect-full" x="0" y="0" width="100%" height="100%" />
+                        </clipPath>
+                    </defs>
+                </g>
+            </svg>
+
+            <svg class="canvas-overlay-svg" viewBox="0 0 1386 663" fill="none" xmlns="http://www.w3.org/2000/svg"
+                preserveAspectRatio="none">
+                <!-- SplitView Separator -->
+                <g id="splitview-divider" style="display: none;">
+                    <rect x="-2" y="0" width="11" height="100%" fill="transparent" />
+                    <rect id="divider-handle" x="1" y="289.5" width="2" height="50" rx="1" fill="#999999" />
+                </g>
+
+                <g id="dock-elements">
+                    <!-- Left Separator -->
+                    <line x1="537" y1="633.107" x2="537" y2="652.893" stroke="url(#paint0_linear_595_14217)"
+                        stroke-width="0.214453" stroke-linecap="round" />
+
+                    <!-- Icon 1: SplitView Trigger (Center 564, gap 12px) -->
+                    <g class="dock-icon" id="splitview-trigger">
+                        <rect class="dock-icon-area" x="549" y="628" width="30" height="30" />
+                        <path
+                            d="M562.571 648.5H560.339C559.599 648.5 559 647.9 559 647.161V639.125C559 638.385 559.599 637.786 560.339 637.786H562.571"
+                            stroke="#D1D1D1" stroke-width="0.714286" stroke-linecap="round" fill="none" />
+                        <path
+                            d="M565.429 648.5H567.661C568.4 648.5 569 647.9 569 647.161V639.125C569 638.385 568.4 637.786 567.661 637.786H565.429"
+                            stroke="#D1D1D1" stroke-width="0.714286" stroke-linecap="round" fill="none" />
+                        <path d="M564 636V650.286" stroke="#D1D1D1" stroke-width="0.714286" stroke-linecap="round"
+                            fill="none" />
+                    </g>
+
+                    <!-- Mid-Left Separator -->
+                    <line x1="591" y1="633.107" x2="591" y2="652.893" stroke="url(#paint1_linear_595_14217)"
+                        stroke-width="0.214453" stroke-linecap="round" />
+
+                    <!-- Icon 2: Home (Center 618, gap 12px) -->
+                    <g class="dock-icon" id="home-trigger">
+                        <rect class="dock-icon-area" x="603" y="628" width="30" height="30" />
+                        <path
+                            d="M612.65 643.242C612.65 642.29 612.65 641.814 612.856 641.396C613.062 640.977 613.448 640.668 614.221 640.048L614.971 639.447C616.369 638.328 617.068 637.768 617.9 637.768C618.732 637.768 619.431 638.328 620.829 639.447L621.579 640.048C622.352 640.668 622.738 640.977 622.944 641.396C623.15 641.814 623.15 642.29 623.15 643.242V646.214C623.15 647.536 623.15 648.197 622.711 648.607C622.271 649.018 621.564 649.018 620.15 649.018H615.65C614.236 649.018 613.529 649.018 613.089 648.607C612.65 648.197 612.65 647.536 612.65 646.214V643.242Z"
+                            stroke="#D1D1D1" stroke-width="0.850003" fill="none" />
+                        <path
+                            d="M619.4 649.018V645.941C619.4 645.569 619.099 645.268 618.727 645.268H617.073C616.701 645.268 616.4 645.569 616.4 645.941V649.018"
+                            stroke="#D1D1D1" stroke-width="0.850003" stroke-linecap="round" stroke-linejoin="round"
+                            fill="none" />
+                    </g>
+
+                    <!-- Mid-Right Separator -->
+                    <line x1="645" y1="633.107" x2="645" y2="652.893" stroke="url(#paint2_linear_595_14217)"
+                        stroke-width="0.214453" stroke-linecap="round" />
+
+                    <!-- Icon 3: Browser (Center 672, gap 12px) -->
+                    <g class="dock-icon" id="browser-trigger">
+                        <rect class="dock-icon-area" x="657" y="628" width="30" height="30" />
+                        <image href="./svg/panel_apps/iconos_app/globe_light.svg" x="663.7800342" y="634.7800342"
+                            width="16.4399316" height="16.4399316" preserveAspectRatio="xMidYMid meet"
+                            style="pointer-events: none;" />
+                    </g>
+
+                    <!-- Right Separator -->
+                    <line x1="699" y1="633.107" x2="699" y2="652.893" stroke="url(#paint3_linear_595_14217)"
+                        stroke-width="0.214453" stroke-linecap="round" />
+
+                </g>
+                <defs>
+                    <linearGradient id="paint0_linear_595_14217" x1="539" y1="633" x2="539" y2="653"
+                        gradientUnits="userSpaceOnUse">
+                        <stop stop-color="white" stop-opacity="0" />
+                        <stop offset="0.480769" stop-color="#CACACA" />
+                        <stop offset="1" stop-color="#999999" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="paint1_linear_595_14217" x1="602" y1="633" x2="602" y2="653"
+                        gradientUnits="userSpaceOnUse">
+                        <stop stop-color="white" stop-opacity="0" />
+                        <stop offset="0.480769" stop-color="#CACACA" />
+                        <stop offset="1" stop-color="#999999" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="paint2_linear_595_14217" x1="649" y1="633" x2="649" y2="653"
+                        gradientUnits="userSpaceOnUse">
+                        <stop stop-color="white" stop-opacity="0" />
+                        <stop offset="0.480769" stop-color="#CACACA" />
+                        <stop offset="1" stop-color="#999999" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="paint3_linear_595_14217" x1="696" y1="633" x2="696" y2="653"
+                        gradientUnits="userSpaceOnUse">
+                        <stop stop-color="white" stop-opacity="0" />
+                        <stop offset="0.480769" stop-color="#CACACA" />
+                        <stop offset="1" stop-color="#999999" stop-opacity="0" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div class="panes-container">
+                <div id="pane-left" class="webview-pane">
+                    <webview id="wv-left" src="http://127.0.0.1:3001" partition="persist:wrapper" allowpopups
+                        webpreferences="contextIsolation=yes, sandbox=yes, nativeWindowOpen=yes, javascript=yes, webSecurity=yes">
+                    </webview>
+                    <div id="webview-loader-left" class="pane-loader">
+                        <div id="webview-loader-root-left" class="pane-loader-root"></div>
+                    </div>
+                </div>
+                <div class="spacer"></div>
+                <div id="pane-right" class="webview-pane">
+                    <div id="tab-overview">
+                        <div id="tab-overview-background-root"></div>
+                        <div id="overview-grid" class="overview-grid"></div>
+                    </div>
+                    <div id="webview-loader-right" class="pane-loader">
+                        <div id="webview-loader-root-right" class="pane-loader-root"></div>
+                    </div>
+                    <!-- Content injected via JS -->
+                </div>
+            </div>
+            <img id="active-view-indicator" src="./Indicador%20de%20vista%20activa.svg" alt="" aria-hidden="true" />
+        </div>
+
+    </div>
+
+    <script>
+        const container = document.getElementById('main-container');
+        const splitTrigger = document.getElementById('splitview-trigger');
+        const homeTrigger = document.getElementById('home-trigger');
+        const browserTrigger = document.getElementById('browser-trigger');
+        const maskFull = document.getElementById('mask-full');
+        const leftPaneMask = document.getElementById('pane-left-mask-path');
+        const rightPaneMask = document.getElementById('pane-right-mask-path');
+        const canvasPath = document.getElementById('main-canvas-path');
+        const dockElements = document.getElementById('dock-elements');
+        const splitDivider = document.getElementById('splitview-divider');
+        const wrapper = container.querySelector('.main-canvas-wrapper');
+        const overlaySvg = document.querySelector('.canvas-overlay-svg');
+        const panesContainer = document.querySelector('.panes-container');
+        const activeViewIndicator = document.getElementById('active-view-indicator');
+        const maskSplitGroup = document.getElementById('mask-split-group');
+        const zipperRectSplit = document.getElementById('zipper-rect-split');
+        const zipperRectFull = document.getElementById('zipper-rect-full');
+
+        let splitRatio = 1.0;
+        let viewMode = 'single-left';
+
+        let dockState = 'closed';
+        let cachedW = 0, cachedH = 0;
+        let lastPaths = { fullD: '', leftD: '', rightD: '', splitX: -1, splitRatio: -1 };
+        let isLooping = false;
+        let isDragging = false;
+        let splitRatioAnimationActive = false;
+        let splitAnimationTargetRatio = 1.0;
+        let focusedPane = 'left';
+        const LOADER_FADE_MS = 600;
+
+        const MODERN_UA = navigator.userAgent
+            .replace(/\sElectron\/[^\s]+/g, '')
+            .replace(/\sWrapper\/[^\s]+/g, '')
+            .trim();
+
+        const K_CENTER = 0.05;
+        const K_LATERAL = 0.025;
+        const DAMPING = 0.35;
+        const DT = 1.0;
+
+        const particles = {
+            dL: { x: 0, y: 700, py: 700, k: K_LATERAL, ty: 0 },
+            dR: { x: 0, y: 700, py: 700, k: K_LATERAL, ty: 0 },
+            dC1: { x: 0, y: 700, py: 700, k: K_LATERAL * 1.5, ty: 0 },
+            dC2: { x: 0, y: 700, py: 700, k: K_CENTER, ty: 0 },
+            dC3: { x: 0, y: 700, py: 700, k: K_CENTER, ty: 0 },
+            dC4: { x: 0, y: 700, py: 700, k: K_LATERAL * 1.5, ty: 0 }
+        };
+
+        const initParticles = (w, h) => {
+            cachedW = w; cachedH = h;
+            const bottom = h - 1;
+            const dockTop = h - 26;
+            particles.dL.y = particles.dL.py = bottom; particles.dL.ty = bottom;
+            particles.dR.y = particles.dR.py = bottom; particles.dR.ty = bottom;
+            particles.dC1.y = particles.dC1.py = bottom; particles.dC1.ty = bottom;
+            particles.dC2.y = particles.dC2.py = bottom; particles.dC2.ty = dockTop;
+            particles.dC3.y = particles.dC3.py = bottom; particles.dC3.ty = dockTop;
+            particles.dC4.y = particles.dC4.py = bottom; particles.dC4.ty = bottom;
+            startLoop();
+        };
+
+        const updatePhysics = (h) => {
+            if (!h) return false;
+            const bottom = h - 1;
+            const isClosed = (dockState === 'closed');
+            let moving = false;
+            const progress = (bottom - particles.dC2.y) / 25;
+            const centerVis = Math.max(0, (progress - 0.82) / 0.18);
+            const edgeVis = Math.max(0, (progress - 0.95) / 0.05);
+            const icons = dockElements.querySelectorAll('.dock-icon');
+            const lines = dockElements.querySelectorAll('line');
+            icons.forEach((icon, idx) => {
+                const isCenter = (idx === 1);
+                const v = isCenter ? centerVis : edgeVis;
+                icon.style.opacity = Math.pow(v, 2);
+            });
+            lines.forEach(line => { line.style.opacity = Math.pow(edgeVis, 2); });
+            for (let key in particles) {
+                const p = particles[key];
+                const targetY = isClosed ? bottom : p.ty;
+                const force = (targetY - p.y) * p.k;
+                const velocity = (p.y - p.py) * DAMPING;
+                const nextY = p.y + velocity + force * (DT * DT);
+                if (Math.abs(nextY - p.y) > 0.001 || Math.abs(targetY - nextY) > 0.001) moving = true;
+                p.py = p.y; p.y = nextY;
+            }
+            return moving;
+        };
+
+        const updateToolbarStatus = () => {
+            const toolbar = document.getElementById('menu-bar-toolbar');
+            if (!toolbar) return;
+            if (activeTabId) {
+                toolbar.style.opacity = '1';
+                toolbar.style.pointerEvents = document.body.classList.contains('top-chrome-visible') ? 'auto' : 'none';
+            } else {
+                toolbar.style.opacity = '0';
+                toolbar.style.pointerEvents = 'none';
+            }
+        };
+
+        const TOP_CHROME_ACTIVE_MS = 2400;
+        const TOP_CHROME_HIDE_MS = 700;
+        let topChromeHideTimer = null;
+        let topChromePinnedByHover = false;
+
+        const clearTopChromeHideTimer = () => {
+            if (topChromeHideTimer) {
+                window.clearTimeout(topChromeHideTimer);
+                topChromeHideTimer = null;
+            }
+        };
+
+        const hasTopChromeContent = () => tabs.length > 0;
+
+        const syncTopChromeAvailability = () => {
+            const hasChrome = hasTopChromeContent();
+            document.body.classList.toggle('has-tabs', hasChrome);
+
+            if (!hasChrome) {
+                topChromePinnedByHover = false;
+                clearTopChromeHideTimer();
+                document.body.classList.remove('top-chrome-visible');
+            }
+
+            updateToolbarStatus();
+        };
+
+        const hideTopChrome = () => {
+            topChromePinnedByHover = false;
+            clearTopChromeHideTimer();
+            document.body.classList.remove('top-chrome-visible');
+            updateToolbarStatus();
+        };
+
+        const scheduleTopChromeHide = (delayMs = TOP_CHROME_HIDE_MS) => {
+            clearTopChromeHideTimer();
+            if (!hasTopChromeContent()) {
+                hideTopChrome();
+                return;
+            }
+
+            topChromeHideTimer = window.setTimeout(() => {
+                if (!topChromePinnedByHover) {
+                    hideTopChrome();
+                }
+            }, delayMs);
+        };
+
+        const showTopChrome = ({ autoHideMs = TOP_CHROME_ACTIVE_MS, pinned = false } = {}) => {
+            syncTopChromeAvailability();
+            if (!hasTopChromeContent()) return;
+
+            topChromePinnedByHover = pinned;
+            clearTopChromeHideTimer();
+            document.body.classList.add('top-chrome-visible');
+            updateToolbarStatus();
+
+            if (!pinned && autoHideMs > 0) {
+                scheduleTopChromeHide(autoHideMs);
+            }
+        };
+
+        const setupTopChromeHover = () => {
+            const menuBar = document.getElementById('menu-bar');
+            const topChromeHitArea = document.getElementById('top-chrome-hit-area');
+            if (!menuBar || !topChromeHitArea) return;
+
+            const pinTopChrome = () => showTopChrome({ autoHideMs: 0, pinned: true });
+            const releaseTopChrome = () => {
+                topChromePinnedByHover = false;
+                scheduleTopChromeHide();
+            };
+
+            topChromeHitArea.addEventListener('mouseenter', pinTopChrome);
+            topChromeHitArea.addEventListener('mouseleave', releaseTopChrome);
+            menuBar.addEventListener('mouseenter', pinTopChrome);
+            menuBar.addEventListener('mouseleave', releaseTopChrome);
+        };
+
+        const updateGeometry = () => {
+            const w = cachedW; const h = cachedH;
+            if (!w || !h) return;
+            const svg = canvasPath.closest('svg');
+            const viewBoxStr = `0 0 ${w} ${h}`;
+            if (svg.getAttribute('viewBox') !== viewBoxStr) {
+                svg.setAttribute('viewBox', viewBoxStr);
+                overlaySvg.setAttribute('viewBox', viewBoxStr);
+            }
+            const L = 0, R = w, rad = 10, bottom = h - 1;
+            let splitX = Math.round(w * splitRatio);
+            splitX = Math.max(0, Math.min(w, splitX));
+            const p = particles; const dockCenter = Math.round(w / 2);
+            p.dL.x = dockCenter - 121; p.dR.x = dockCenter + 119;
+            p.dC1.x = dockCenter - 96; p.dC2.x = dockCenter - 71;
+            p.dC3.x = dockCenter + 69; p.dC4.x = dockCenter + 94;
+            const fullD = `M ${L + rad} 1 H ${R - rad} Q ${R} 1 ${R} ${1 + rad} V ${bottom - rad} Q ${R} ${bottom} ${R - rad} ${bottom} H ${p.dR.x} C ${p.dC4.x} ${bottom} ${p.dC4.x} ${p.dC3.y} ${p.dC3.x} ${p.dC3.y} H ${p.dC2.x} C ${p.dC1.x} ${p.dC2.y} ${p.dC1.x} ${bottom} ${p.dL.x} ${bottom} H ${L + rad} Q ${L} ${bottom} ${L} ${bottom - rad} V ${1 + rad} Q ${L} 1 ${L + rad} 1 Z`;
+            const leftD = `M ${L + rad} 1 H ${splitX - 2 - rad} Q ${splitX - 2} 1 ${splitX - 2} ${1 + rad} V ${p.dC2.y} H ${p.dC2.x} C ${p.dC1.x} ${p.dC2.y} ${p.dC1.x} ${bottom} ${p.dL.x} ${bottom} H ${L + rad} Q ${L} ${bottom} ${L} ${bottom - rad} V ${1 + rad} Q ${L} 1 ${L + rad} 1 Z`;
+            const rightD = `M ${splitX + 2 + rad} 1 H ${R - rad} Q ${R} 1 ${R} ${1 + rad} V ${bottom - rad} Q ${R} ${bottom} ${R - rad} ${bottom} H ${p.dR.x} C ${p.dC4.x} ${bottom} ${p.dC4.x} ${p.dC3.y} ${p.dC3.x} ${p.dC3.y} H ${splitX + 2} V ${1 + rad} Q ${splitX + 2} 1 ${splitX + 2 + rad} 1 Z`;
+            if (fullD !== lastPaths.fullD) { canvasPath.setAttribute('d', fullD); maskFull.setAttribute('d', fullD); lastPaths.fullD = fullD; }
+            if (leftD !== lastPaths.leftD) { leftPaneMask.setAttribute('d', leftD); lastPaths.leftD = leftD; }
+            if (rightD !== lastPaths.rightD) { rightPaneMask.setAttribute('d', rightD); lastPaths.rightD = rightD; }
+            dockElements.setAttribute('transform', `translate(${dockCenter - 618}, ${h - 653.5})`);
+            splitDivider.style.transform = `translate(${splitX - 2}px, 0)`;
+            if (splitRatio !== lastPaths.splitRatio || splitX !== lastPaths.splitX) {
+                if (splitRatio >= 0.99) { panesContainer.style.gridTemplateColumns = `1fr 0px 0px`; splitDivider.style.display = 'none'; }
+                else if (splitRatio <= 0.01) { panesContainer.style.gridTemplateColumns = `0px 0px 1fr`; splitDivider.style.display = 'none'; }
+                else { panesContainer.style.gridTemplateColumns = `${splitX - 2}px 4px ${w - splitX - 2}px`; splitDivider.style.display = 'block'; }
+                const maskFullGrp = document.getElementById('mask-full-group');
+                const maskSplitGrp = document.getElementById('mask-split-group');
+                if (splitRatio > 0.99 || splitRatio < 0.01) { maskFullGrp.style.display = 'block'; maskSplitGrp.style.display = 'none'; }
+                else { maskFullGrp.style.display = 'none'; maskSplitGrp.style.display = 'block'; }
+                lastPaths.splitRatio = splitRatio; lastPaths.splitX = splitX;
+            }
+            updateToolbarStatus();
+            updateActiveViewIndicatorPosition();
+            zipperRectSplit.setAttribute('height', '100%'); zipperRectFull.setAttribute('height', '100%');
+            zipperRectFull.setAttribute('y', '0'); canvasPath.setAttribute('mask', 'url(#split-mask)');
+        };
+
+        const animate = () => {
+            const moving = updatePhysics(cachedH);
+            updateGeometry();
+            if (moving || splitRatioAnimationActive || isDragging) { requestAnimationFrame(animate); }
+            else { isLooping = false; }
+        };
+
+        const startLoop = () => { if (!isLooping) { isLooping = true; requestAnimationFrame(animate); } };
+
+        const onResize = () => {
+            const rect = wrapper.getBoundingClientRect();
+            cachedW = rect.width; cachedH = rect.height;
+            // Actualizar targets de partículas Verlet para la nueva dimensión
+            // CORRECCIÓN: Los targets .ty deben actualizarse cuando cambia la altura
+            // para evitar que el dock aparezca en posición incorrecta en fullscreen
+            const bottom = cachedH - 1;
+            const dockTop = cachedH - 26;
+            particles.dL.ty = bottom;
+            particles.dR.ty = bottom;
+            particles.dC1.ty = bottom;
+            particles.dC2.ty = dockTop;
+            particles.dC3.ty = dockTop;
+            particles.dC4.ty = bottom;
+            updateGeometry(); startLoop();
+        };
+        const rObs = new ResizeObserver(onResize);
+        rObs.observe(wrapper);
+
+        const hitArea = document.getElementById('dock-hit-area');
+        const backdrop = document.getElementById('dock-backdrop');
+        const sidebarHitArea = document.getElementById('sidebar-hit-area');
+        const sidebarCloseOverlay = document.getElementById('sidebar-close-overlay');
+        const closeDockIfOpen = () => {
+            if (dockState === 'open') {
+                setDockState('closed');
+            }
+        };
+        const setSidebarOpen = (open) => {
+            document.body.classList.toggle('sidebar-active', !open);
+        };
+        const isDockTarget = (target) => {
+            if (!(target instanceof Element)) return false;
+            return Boolean(
+                target.closest('#dock-elements')
+                || target.closest('#dock-hit-area')
+                || target.closest('#dock-backdrop')
+            );
+        };
+
+        hitArea.addEventListener('click', (event) => {
+            event.stopPropagation();
+            setDockState('open');
+        });
+        backdrop.addEventListener('mousedown', () => setDockState('closed'));
+        sidebarHitArea.addEventListener('click', (event) => {
+            event.stopPropagation();
+            setSidebarOpen(true);
+        });
+        sidebarCloseOverlay.addEventListener('mousedown', () => setSidebarOpen(false));
+        document.addEventListener('mousedown', (event) => {
+            if (dockState !== 'open') return;
+            if (isDockTarget(event.target)) return;
+            setDockState('closed');
+        }, true);
+
+
+
+        window.addEventListener('load', () => {
+            const rect = wrapper.getBoundingClientRect();
+            cachedW = rect.width; cachedH = rect.height;
+            initParticles(cachedW, cachedH);
+            setupTopChromeHover();
+
+            // Notify React about initial tab state (empty)
+            setFocusedPane('left', { notify: false });
+            syncLayoutMode();
+            notifyTabsUpdate();
+        });
+
+        let tabs = [];
+        let activeTabId = null;
+        let lastClosedTabSnapshot = null;
+        let overviewPreviewInterval = null;
+        let tabOverviewPane = 'right';
+        let indicatorCurrentPane = null;
+        let indicatorSwapTimer = null;
+        const INDICATOR_SWAP_FADE_MS = 180;
+        const paneActivationToken = { left: 0, right: 0 };
+        const LayoutMode = Object.freeze({
+            SINGLE_HOME: 'single-home',
+            SINGLE_TAB: 'single-tab',
+            SPLIT: 'split',
+            OVERVIEW_LEFT: 'overview-left',
+            OVERVIEW_RIGHT: 'overview-right'
+        });
+        let layoutMode = LayoutMode.SINGLE_HOME;
+        let isRestoringState = false;
+
+        const clampSplitRatio = (value, fallback = 1.0) => {
+            if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+            return Math.max(0, Math.min(1, value));
+        };
+
+        const createRuntimeTabId = () => {
+            return `tab-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        };
+
+        const createUniqueTabId = (candidateId, usedIds) => {
+            const normalizedCandidate = typeof candidateId === 'string' ? candidateId.trim() : '';
+            if (normalizedCandidate && !usedIds.has(normalizedCandidate)) {
+                usedIds.add(normalizedCandidate);
+                return normalizedCandidate;
+            }
+
+            let generatedId = createRuntimeTabId();
+            while (usedIds.has(generatedId)) {
+                generatedId = createRuntimeTabId();
+            }
+            usedIds.add(generatedId);
+            return generatedId;
+        };
+
+        const saveAppState = () => {
+            if (isRestoringState) return;
+            const overviewGrid = document.getElementById('overview-grid');
+            const state = {
+                version: 2,
+                tabs: tabs.map(t => ({
+                    id: t.id,
+                    url: t.url,
+                    title: t.title,
+                    favicon: t.favicon || '',
+                    pane: getTabPane(t)
+                })),
+                activeTabId: activeTabId || null,
+                focusedPane: normalizePane(focusedPane),
+                splitRatio: clampSplitRatio(splitRatio, 1.0),
+                viewMode,
+                layoutMode: syncLayoutMode(),
+                visibleTabs: {
+                    left: getVisibleTabForPane('left')?.id || null,
+                    right: getVisibleTabForPane('right')?.id || null
+                },
+                tabOverview: {
+                    visible: isTabOverviewVisible(),
+                    pane: getTabOverviewPane(),
+                    scrollTop: overviewGrid ? overviewGrid.scrollTop : 0
+                },
+                gridScrollTop: overviewGrid ? overviewGrid.scrollTop : 0
+            };
+            window.electronAPI?.saveState(state);
+        };
+
+        const resolvePaneElement = (pane = 'left') => {
+            return document.getElementById(pane === 'right' ? 'pane-right' : 'pane-left');
+        };
+
+        const getTabPane = (tab) => tab?.pane === 'right' ? 'right' : 'left';
+        const normalizePane = (pane = 'left') => pane === 'right' ? 'right' : 'left';
+        const bumpPaneActivationToken = (pane = 'left') => {
+            const key = normalizePane(pane);
+            paneActivationToken[key] += 1;
+            return paneActivationToken[key];
+        };
+        const isPaneActivationTokenCurrent = (pane = 'left', token = 0) => {
+            const key = normalizePane(pane);
+            return paneActivationToken[key] === token;
+        };
+
+        const getCurrentOverviewPane = () => {
+            const overview = document.getElementById('tab-overview');
+            if (overview?.parentElement?.id === 'pane-left') return 'left';
+            if (overview?.parentElement?.id === 'pane-right') return 'right';
+            return tabOverviewPane;
+        };
+
+        const computeLayoutMode = () => {
+            const overview = document.getElementById('tab-overview');
+            const overviewVisible = Boolean(overview && overview.style.display === 'flex');
+            const geometrySplitLike = viewMode === 'split'
+                || splitRatio < 0.99
+                || (splitRatioAnimationActive && splitAnimationTargetRatio < 0.99);
+
+            if (overviewVisible) {
+                return getCurrentOverviewPane() === 'left' ? LayoutMode.OVERVIEW_LEFT : LayoutMode.OVERVIEW_RIGHT;
+            }
+            if (geometrySplitLike) return LayoutMode.SPLIT;
+            if (activeTabId) return LayoutMode.SINGLE_TAB;
+            return LayoutMode.SINGLE_HOME;
+        };
+
+        const syncLayoutMode = () => {
+            layoutMode = computeLayoutMode();
+            return layoutMode;
+        };
+
+        const isLayoutSplitLike = () => {
+            return layoutMode === LayoutMode.SPLIT
+                || layoutMode === LayoutMode.OVERVIEW_LEFT
+                || layoutMode === LayoutMode.OVERVIEW_RIGHT;
+        };
+
+        const isSplitLikeMode = () => {
+            const geometrySplit = viewMode === 'split' || splitRatio < 0.99 || splitRatioAnimationActive;
+            return geometrySplit || isLayoutSplitLike();
+        };
+        const isCollapsingToSingleLeft = () => splitRatioAnimationActive && splitAnimationTargetRatio >= 0.99;
+
+        const getVisibleTabForPane = (pane = 'left') => {
+            return tabs.find(t => getTabPane(t) === pane && t.container?.classList.contains('active')) || null;
+        };
+
+        const applyFocusedPaneStyles = () => {
+            const paneLeft = document.getElementById('pane-left');
+            const paneRight = document.getElementById('pane-right');
+            const splitLike = isSplitLikeMode();
+
+            if (paneLeft) paneLeft.classList.toggle('pane-focused', splitLike && focusedPane === 'left');
+            if (paneRight) paneRight.classList.toggle('pane-focused', splitLike && focusedPane === 'right');
+            updateActiveViewIndicatorPosition();
+        };
+
+        const setFocusedPane = (pane = 'left', options = {}) => {
+            syncLayoutMode();
+            const splitLike = isSplitLikeMode();
+            const normalizedPane = pane === 'right' && splitLike ? 'right' : 'left';
+            focusedPane = normalizedPane;
+
+            const paneTab = getVisibleTabForPane(normalizedPane);
+            if (paneTab) {
+                activeTabId = paneTab.id;
+            } else if (!splitLike) {
+                // In single-left mode there must not be a stale active tab from right pane.
+                activeTabId = null;
+            }
+
+            applyFocusedPaneStyles();
+            if (options.notify !== false) {
+                notifyTabsUpdate();
+            }
+        };
+
+        const getActionPane = () => {
+            syncLayoutMode();
+            return isSplitLikeMode() && focusedPane === 'right' ? 'right' : 'left';
+        };
+
+        const isTabOverviewVisible = () => {
+            const overview = document.getElementById('tab-overview');
+            return Boolean(overview && overview.style.display === 'flex');
+        };
+
+        const getTabOverviewPane = () => {
+            return getCurrentOverviewPane();
+        };
+
+        const attachTabOverviewToPane = (pane = 'right') => {
+            const normalizedPane = pane === 'left' ? 'left' : 'right';
+            const overview = document.getElementById('tab-overview');
+            const paneElement = resolvePaneElement(normalizedPane);
+            if (!overview || !paneElement) return;
+            if (overview.parentElement !== paneElement) {
+                paneElement.appendChild(overview);
+            }
+            tabOverviewPane = normalizedPane;
+            syncLayoutMode();
+        };
+
+        const getTabOverviewCandidates = () => {
+            if (!isSplitLikeMode()) return [...tabs];
+            const overviewPane = getTabOverviewPane();
+            const oppositePane = overviewPane === 'right' ? 'left' : 'right';
+            const oppositeVisibleTab = getVisibleTabForPane(oppositePane);
+            if (!oppositeVisibleTab) return [...tabs];
+            return tabs.filter((tab) => tab.id !== oppositeVisibleTab.id);
+        };
+
+        const updateActiveViewIndicatorPosition = () => {
+            if (!activeViewIndicator || !wrapper) return;
+
+            if (!isSplitLikeMode() || !activeTabId) {
+                if (indicatorSwapTimer) {
+                    clearTimeout(indicatorSwapTimer);
+                    indicatorSwapTimer = null;
+                }
+                indicatorCurrentPane = null;
+                activeViewIndicator.classList.remove('visible');
+                return;
+            }
+
+            const targetPaneName = getActionPane() === 'right' ? 'right' : 'left';
+            const targetPane = targetPaneName === 'right'
+                ? document.getElementById('pane-right')
+                : document.getElementById('pane-left');
+
+            if (!targetPane) {
+                if (indicatorSwapTimer) {
+                    clearTimeout(indicatorSwapTimer);
+                    indicatorSwapTimer = null;
+                }
+                indicatorCurrentPane = null;
+                activeViewIndicator.classList.remove('visible');
+                return;
+            }
+
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const paneRect = targetPane.getBoundingClientRect();
+            if (paneRect.width <= 0 || paneRect.height <= 0) {
+                if (indicatorSwapTimer) {
+                    clearTimeout(indicatorSwapTimer);
+                    indicatorSwapTimer = null;
+                }
+                indicatorCurrentPane = null;
+                activeViewIndicator.classList.remove('visible');
+                return;
+            }
+
+            const centerX = paneRect.left - wrapperRect.left + (paneRect.width / 2);
+            const borderY = paneRect.bottom - wrapperRect.top - 1;
+            const applyPosition = () => {
+                activeViewIndicator.style.left = `${Math.round(centerX)}px`;
+                activeViewIndicator.style.top = `${Math.round(borderY)}px`;
+            };
+
+            const paneChanged = indicatorCurrentPane !== null && indicatorCurrentPane !== targetPaneName;
+
+            if (paneChanged) {
+                if (indicatorSwapTimer) clearTimeout(indicatorSwapTimer);
+                activeViewIndicator.classList.remove('visible');
+                indicatorSwapTimer = setTimeout(() => {
+                    applyPosition();
+                    activeViewIndicator.classList.add('visible');
+                    indicatorCurrentPane = targetPaneName;
+                    indicatorSwapTimer = null;
+                }, INDICATOR_SWAP_FADE_MS);
+                return;
+            }
+
+            applyPosition();
+            if (!activeViewIndicator.classList.contains('visible')) {
+                activeViewIndicator.classList.add('visible');
+            }
+            indicatorCurrentPane = targetPaneName;
+        };
+
+        const removeLegacySplitWebview = () => {
+            const rightWv = document.getElementById('wv-right-split');
+            if (rightWv) rightWv.remove();
+            const rightContainer = document.getElementById('wv-right-split-container');
+            if (rightContainer) rightContainer.remove();
+        };
+
+        const removeTabsByPane = (pane = 'right') => {
+            const paneTabs = tabs.filter(t => getTabPane(t) === pane);
+            if (paneTabs.length === 0) return false;
+
+            const removedIds = new Set(paneTabs.map(t => t.id));
+            paneTabs.forEach(t => t.container?.remove());
+            tabs = tabs.filter(t => !removedIds.has(t.id));
+
+            if (activeTabId && removedIds.has(activeTabId)) {
+                activeTabId = null;
+            }
+
+            saveAppState();
+            return true;
+        };
+
+        const moveTabToPane = (tab, pane = 'left') => {
+            if (!tab || !tab.container) return;
+            const targetPane = pane === 'right' ? 'right' : 'left';
+            if (getTabPane(tab) === targetPane) return;
+            const paneElement = resolvePaneElement(targetPane);
+            if (!paneElement) return;
+            paneElement.appendChild(tab.container);
+            tab.pane = targetPane;
+        };
+
+        const showSplitPair = (leftTab, rightTab) => {
+            if (!leftTab || !rightTab || leftTab.id === rightTab.id) return false;
+
+            moveTabToPane(leftTab, 'left');
+            moveTabToPane(rightTab, 'right');
+
+            tabs.forEach(t => t.container?.classList.remove('active'));
+
+            const dashboardWv = document.getElementById('wv-left');
+            if (dashboardWv) {
+                dashboardWv.style.opacity = '0';
+                dashboardWv.style.pointerEvents = 'none';
+            }
+
+            leftTab.container?.classList.add('active');
+            rightTab.container?.classList.add('active');
+
+            hideAllPaneLoaders();
+            hideTabOverview();
+            setFocusedPane('right', { notify: false });
+            saveAppState();
+            notifyTabsUpdate();
+            return true;
+        };
+
+        const getPaneLoader = (pane = 'left') => {
+            return document.getElementById(pane === 'right' ? 'webview-loader-right' : 'webview-loader-left');
+        };
+
+        const hideAllPaneLoaders = () => {
+            ['left', 'right'].forEach((pane) => {
+                const loader = getPaneLoader(pane);
+                if (!loader) return;
+                loader.style.opacity = '0';
+                loader.style.display = 'none';
+            });
+        };
+
+        const showPaneLoader = (pane = 'left') => {
+            const loader = getPaneLoader(pane);
+            if (!loader) return;
+            loader.style.display = 'flex';
+            requestAnimationFrame(() => {
+                loader.style.opacity = '1';
+            });
+        };
+
+        const hidePaneLoader = (pane = 'left', delayMs = 0, token = null) => {
+            const loader = getPaneLoader(pane);
+            if (!loader) return;
+            setTimeout(() => {
+                if (token !== null && !isPaneActivationTokenCurrent(pane, token)) return;
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    if (token !== null && !isPaneActivationTokenCurrent(pane, token)) return;
+                    loader.style.display = 'none';
+                }, LOADER_FADE_MS);
+            }, delayMs);
+        };
+
+        const isSafeImageUrl = (value) => {
+            if (!value || typeof value !== 'string') return false;
+            const url = value.trim();
+            if (!url) return false;
+            if (url.startsWith('data:image/')) return true;
+            if (url.startsWith('blob:')) return true;
+
+            try {
+                const parsed = new URL(url);
+                return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+            } catch {
+                return false;
+            }
+        };
+
+        const createEmptyPreviewNode = () => {
+            const empty = document.createElement('div');
+            empty.className = 'tab-card-preview-empty';
+
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(svgNS, 'svg');
+            svg.setAttribute('width', '60');
+            svg.setAttribute('height', '60');
+            svg.setAttribute('viewBox', '0 0 24 24');
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', 'currentColor');
+            svg.setAttribute('stroke-width', '1');
+            svg.setAttribute('stroke-linecap', 'round');
+            svg.setAttribute('stroke-linejoin', 'round');
+
+            const rect = document.createElementNS(svgNS, 'rect');
+            rect.setAttribute('x', '3');
+            rect.setAttribute('y', '3');
+            rect.setAttribute('width', '18');
+            rect.setAttribute('height', '18');
+            rect.setAttribute('rx', '2');
+            rect.setAttribute('ry', '2');
+
+            const lineTop = document.createElementNS(svgNS, 'line');
+            lineTop.setAttribute('x1', '3');
+            lineTop.setAttribute('y1', '9');
+            lineTop.setAttribute('x2', '21');
+            lineTop.setAttribute('y2', '9');
+
+            const lineSide = document.createElementNS(svgNS, 'line');
+            lineSide.setAttribute('x1', '9');
+            lineSide.setAttribute('y1', '21');
+            lineSide.setAttribute('x2', '9');
+            lineSide.setAttribute('y2', '9');
+
+            svg.appendChild(rect);
+            svg.appendChild(lineTop);
+            svg.appendChild(lineSide);
+            empty.appendChild(svg);
+            return empty;
+        };
+
+        const createTabCardPreviewNode = (tab) => {
+            if (isSafeImageUrl(tab?.thumbnail)) {
+                const thumb = document.createElement('img');
+                thumb.className = 'tab-card-thumb';
+                thumb.alt = '';
+                thumb.src = tab.thumbnail;
+                thumb.referrerPolicy = 'no-referrer';
+                return thumb;
+            }
+            return createEmptyPreviewNode();
+        };
+
+        const normalizeNavigableUrl = (rawUrl, baseUrl = '') => {
+            if (!rawUrl || typeof rawUrl !== 'string') return null;
+            const trimmed = rawUrl.trim();
+            if (!trimmed) return null;
+            if (trimmed === 'about:blank') return 'about:blank';
+
+            try {
+                const base = (typeof baseUrl === 'string' && baseUrl.trim()) ? baseUrl.trim() : undefined;
+                const parsed = base ? new URL(trimmed, base) : new URL(trimmed);
+                if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                    return parsed.toString();
+                }
+                if (parsed.protocol === 'about:' && parsed.href === 'about:blank') {
+                    return 'about:blank';
+                }
+                return null;
+            } catch {
+                return null;
+            }
+        };
+
+        const updateOverviewCardPreview = (tab) => {
+            const card = document.querySelector(`.tab-card[data-tab-id="${tab.id}"]`);
+            if (!card) return;
+            const body = card.querySelector('.tab-card-body');
+            if (!body) return;
+            body.replaceChildren(createTabCardPreviewNode(tab));
+        };
+
+        const captureTabPreview = async (tab) => {
+            if (!tab?.webview || typeof tab.webview.capturePage !== 'function') return;
+
+            try {
+                const image = await tab.webview.capturePage();
+                if (!image || typeof image.toDataURL !== 'function') return;
+
+                const dataUrl = image.toDataURL();
+                if (!dataUrl || dataUrl === tab.thumbnail) return;
+
+                tab.thumbnail = dataUrl;
+                updateOverviewCardPreview(tab);
+            } catch (error) {
+                // Ignore capture errors for pages that block or race during load.
+            }
+        };
+
+        const scheduleTabPreviewCapture = (tab, delayMs = 180) => {
+            if (!tab) return;
+            if (tab.previewTimer) clearTimeout(tab.previewTimer);
+            tab.previewTimer = setTimeout(() => {
+                captureTabPreview(tab);
+            }, delayMs);
+        };
+
+        const startTabOverviewPreviewLoop = () => {
+            if (overviewPreviewInterval) return;
+            overviewPreviewInterval = setInterval(() => {
+                const overview = document.getElementById('tab-overview');
+                if (!overview || overview.style.display !== 'flex') return;
+                tabs.forEach(tab => scheduleTabPreviewCapture(tab, 0));
+            }, 900);
+        };
+
+        const stopTabOverviewPreviewLoop = () => {
+            if (!overviewPreviewInterval) return;
+            clearInterval(overviewPreviewInterval);
+            overviewPreviewInterval = null;
+        };
+
+        const navigatePopupUrlInSameTab = (tab, wv, rawUrl) => {
+            if (!tab || !wv || !rawUrl) return;
+            const url = normalizeNavigableUrl(rawUrl, typeof wv.getURL === 'function' ? wv.getURL() : '');
+            if (!url) return;
+
+            // Keep normal web navigation in the same current tab instead of opening external windows.
+            tab.url = url;
+            notifyTabsUpdate();
+            try {
+                wv.loadURL(url);
+            } catch (error) {
+                console.warn('Failed to load popup URL in same tab:', url, error);
+            }
+        };
+
+        const shouldUseAuthPopupBridge = (rawUrl, features = '') => {
+            if (!rawUrl || typeof rawUrl !== 'string') return false;
+
+            let parsed;
+            try {
+                parsed = new URL(rawUrl);
+            } catch {
+                return false;
+            }
+
+            if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+                return false;
+            }
+
+            const haystack = `${parsed.hostname}${parsed.pathname}${parsed.search} ${features || ''}`.toLowerCase();
+            return [
+                'login',
+                'signin',
+                'signup',
+                'oauth',
+                'authorize',
+                'consent',
+                'challenge',
+                'verify',
+                'verification',
+                'account',
+                'passkey',
+                'webauthn',
+                'saml',
+                'authenticate',
+                'auth',
+            ].some((keyword) => haystack.includes(keyword));
+        };
+
+        const openAuthPopupForTab = (tab, rawUrl, fallbackTitle = '', features = '') => {
+            if (!shouldUseAuthPopupBridge(rawUrl, features)) return false;
+
+            window.electronAPI?.authPopup?.open?.({
+                url: rawUrl,
+                title: tab?.title || fallbackTitle || '',
+                favicon: tab?.favicon || '',
+                sourceTabId: tab?.id || null,
+            });
+            return true;
+        };
+
+        const GOOGLE_SAME_TAB_SCRIPT = String.raw`
+            (() => {
+                if (window.__wrapperGoogleSameTabInstalled) return;
+                window.__wrapperGoogleSameTabInstalled = true;
+
+                const GOOGLE_HOST_RE = /(^|\.)google\./i;
+
+                const isHttpUrl = (value) => {
+                    if (!value || typeof value !== 'string') return false;
+                    try {
+                        const parsed = new URL(value, window.location.href);
+                        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+                    } catch {
+                        return false;
+                    }
+                };
+
+                const toAbsoluteUrl = (value) => {
+                    if (!isHttpUrl(value)) return null;
+                    try {
+                        return new URL(value, window.location.href).toString();
+                    } catch {
+                        return null;
+                    }
+                };
+
+                const resolveGoogleDestination = (anchor) => {
+                    if (!(anchor instanceof HTMLAnchorElement)) return null;
+
+                    const candidates = [
+                        anchor.dataset.href,
+                        anchor.dataset.url,
+                        anchor.getAttribute('data-href'),
+                        anchor.getAttribute('data-url'),
+                        anchor.getAttribute('href'),
+                    ].filter(Boolean);
+
+                    for (const candidate of candidates) {
+                        try {
+                            const parsed = new URL(candidate, window.location.href);
+                            if (!GOOGLE_HOST_RE.test(parsed.hostname)) {
+                                if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                                    return parsed.toString();
+                                }
+                                continue;
+                            }
+
+                            const redirected =
+                                parsed.searchParams.get('q')
+                                || parsed.searchParams.get('url')
+                                || parsed.searchParams.get('adurl')
+                                || parsed.searchParams.get('imgurl')
+                                || parsed.searchParams.get('imgrefurl');
+
+                            if (redirected && isHttpUrl(redirected)) {
+                                return toAbsoluteUrl(redirected);
+                            }
+
+                            if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                                return parsed.toString();
+                            }
+                        } catch {
+                            continue;
+                        }
+                    }
+
+                    return null;
+                };
+
+                const isGoogleSearchResultsPage = () => {
+                    return GOOGLE_HOST_RE.test(window.location.hostname)
+                        && (window.location.pathname === '/search' || window.location.pathname === '/webhp');
+                };
+
+                const isSearchResultAnchor = (anchor) => {
+                    if (!(anchor instanceof HTMLAnchorElement)) return false;
+                    if (!isGoogleSearchResultsPage()) return false;
+                    return Boolean(anchor.closest('#search, #rso, [data-snc], [data-header-feature]'));
+                };
+
+                const patchAnchor = (anchor) => {
+                    if (!isSearchResultAnchor(anchor)) return;
+                    const destination = resolveGoogleDestination(anchor);
+                    if (!destination) return;
+
+                    anchor.target = '_self';
+                    anchor.removeAttribute('ping');
+                    anchor.rel = 'noopener noreferrer';
+                    anchor.dataset.wrapperResolvedHref = destination;
+                };
+
+                const patchAnchors = (root = document) => {
+                    const anchors = root.querySelectorAll
+                        ? root.querySelectorAll('a[href]')
+                        : [];
+                    anchors.forEach((anchor) => patchAnchor(anchor));
+                };
+
+                const forceSameTabNavigation = (event) => {
+                    const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+                    const anchorFromPath = path.find((node) => node instanceof HTMLAnchorElement);
+                    const anchor = anchorFromPath || (event.target instanceof Element ? event.target.closest('a[href]') : null);
+
+                    if (!(anchor instanceof HTMLAnchorElement) || !isSearchResultAnchor(anchor)) return;
+
+                    const destination = anchor.dataset.wrapperResolvedHref || resolveGoogleDestination(anchor);
+                    if (!destination) return;
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (typeof event.stopImmediatePropagation === 'function') {
+                        event.stopImmediatePropagation();
+                    }
+
+                    anchor.target = '_self';
+                    anchor.removeAttribute('ping');
+                    window.location.href = destination;
+                };
+
+                patchAnchors(document);
+
+                document.addEventListener('click', forceSameTabNavigation, true);
+                document.addEventListener('auxclick', forceSameTabNavigation, true);
+                document.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Enter') return;
+                    forceSameTabNavigation(event);
+                }, true);
+
+                const observer = new MutationObserver((mutations) => {
+                    for (const mutation of mutations) {
+                        mutation.addedNodes.forEach((node) => {
+                            if (!(node instanceof Element)) return;
+                            if (node.matches?.('a[href]')) {
+                                patchAnchor(node);
+                            }
+                            patchAnchors(node);
+                        });
+                    }
+                });
+
+                observer.observe(document.documentElement, {
+                    childList: true,
+                    subtree: true,
+                });
+            })();
+        `;
+
+        const installGoogleSearchSameTabInterception = (tab, wv) => {
+            if (!tab || !wv || typeof wv.executeJavaScript !== 'function' || typeof wv.getURL !== 'function') return;
+
+            const currentUrl = normalizeNavigableUrl(wv.getURL());
+            if (!currentUrl) return;
+
+            let parsed;
+            try {
+                parsed = new URL(currentUrl);
+            } catch {
+                return;
+            }
+
+            const isGoogleHost = /(^|\.)google\./i.test(parsed.hostname);
+            const isSearchPage = parsed.pathname === '/search' || parsed.pathname === '/webhp';
+            if (!isGoogleHost || !isSearchPage) return;
+
+            wv.executeJavaScript(GOOGLE_SAME_TAB_SCRIPT).catch((error) => {
+                console.warn('Failed to install Google same-tab interception:', error);
+            });
+        };
+
+        const bindTabWebviewEvents = (tab, wv) => {
+            const syncTabUrl = (rawUrl) => {
+                const nextUrl = normalizeNavigableUrl(
+                    typeof rawUrl === 'string' && rawUrl ? rawUrl : (typeof wv.getURL === 'function' ? wv.getURL() : ''),
+                    typeof wv.getURL === 'function' ? wv.getURL() : ''
+                );
+                if (!nextUrl || nextUrl === tab.url) return;
+                tab.url = nextUrl;
+                notifyTabsUpdate();
+                saveAppState();
+            };
+
+            wv.addEventListener('focus', () => {
+                closeDockIfOpen();
+                setFocusedPane(getTabPane(tab));
+            });
+
+            wv.addEventListener('page-title-updated', (e) => {
+                tab.title = e.title;
+                notifyTabsUpdate();
+                scheduleTabPreviewCapture(tab, 260);
+            });
+
+            wv.addEventListener('page-favicon-updated', (e) => {
+                if (e.favicons && e.favicons.length > 0) {
+                    tab.favicon = e.favicons[0];
+                    notifyTabsUpdate();
+                }
+            });
+
+            wv.addEventListener('did-navigate', (e) => {
+                syncTabUrl(e.url);
+            });
+
+            wv.addEventListener('did-finish-load', () => {
+                syncTabUrl();
+                installGoogleSearchSameTabInterception(tab, wv);
+                scheduleTabPreviewCapture(tab, 220);
+            });
+
+            wv.addEventListener('did-navigate-in-page', (e) => {
+                syncTabUrl(e.url);
+                installGoogleSearchSameTabInterception(tab, wv);
+                scheduleTabPreviewCapture(tab, 180);
+            });
+
+            wv.addEventListener('dom-ready', () => {
+                installGoogleSearchSameTabInterception(tab, wv);
+            });
+
+            wv.addEventListener('did-stop-loading', () => {
+                const title = wv.getTitle();
+                if (title && title !== 'Loading...') {
+                    tab.title = title;
+                    notifyTabsUpdate();
+                }
+                scheduleTabPreviewCapture(tab, 120);
+            });
+
+            wv.addEventListener('will-navigate', (e) => {
+                if (!e?.url) return;
+
+                if (openAuthPopupForTab(tab, e.url, typeof wv.getTitle === 'function' ? wv.getTitle() : '', 'navigate')) {
+                    if (typeof e.preventDefault === 'function') {
+                        e.preventDefault();
+                    }
+                }
+            });
+
+            // Auth-sensitive popups go to the dedicated auth bridge window.
+            wv.addEventListener('new-window', (e) => {
+                if (typeof e.preventDefault === 'function') {
+                    e.preventDefault();
+                }
+
+                if (openAuthPopupForTab(tab, e.url, typeof wv.getTitle === 'function' ? wv.getTitle() : '', e.features || '')) {
+                    return;
+                }
+
+                navigatePopupUrlInSameTab(tab, wv, e.url);
+            });
+
+            wv.addEventListener('did-create-window', (e) => {
+                if (shouldUseAuthPopupBridge(e.url)) {
+                    return;
+                }
+                navigatePopupUrlInSameTab(tab, wv, e.url);
+            });
+
+            // Context menu for webview content
+            wv.addEventListener('context-menu', (e) => {
+
+                e.preventDefault();
+
+                const context = {
+                    type: 'navigation',
+                    data: {
+                        canGoBack: wv.canGoBack ? wv.canGoBack() : false,
+                        canGoForward: wv.canGoForward ? wv.canGoForward() : false,
+                        url: wv.src || ''
+                    }
+                };
+
+                // Override with specific context if available
+                if (e.params) {
+                    if (e.params.linkURL) {
+                        context.type = 'link';
+                        context.data = {
+                            url: e.params.linkURL,
+                            text: e.params.linkText || e.params.linkURL,
+                            canGoBack: context.data.canGoBack,
+                            canGoForward: context.data.canGoForward
+                        };
+                    } else if (e.params.srcURL && e.params.mediaType === 'image') {
+                        context.type = 'image';
+                        context.data = {
+                            src: e.params.srcURL,
+                            alt: e.params.altText || '',
+                            canGoBack: context.data.canGoBack,
+                            canGoForward: context.data.canGoForward
+                        };
+                    } else if (e.params.selectionText) {
+                        context.type = 'text';
+                        context.data = {
+                            selectedText: e.params.selectionText,
+                            canGoBack: context.data.canGoBack,
+                            canGoForward: context.data.canGoForward
+                        };
+                    } else if (e.params.isEditable) {
+                        context.type = 'input';
+                        context.data = {
+                            hasSelection: !!e.params.selectionText,
+                            isEditable: true,
+                            value: e.params.value
+                        };
+                    }
+                }
+
+                window.electronAPI?.contextMenu?.show({
+                    type: context.type,
+                    data: context.data,
+                    x: e.params?.x ?? e.clientX,
+                    y: e.params?.y ?? e.clientY
+                });
+            });
+        };
+
+        const createTabWebview = (tab, pane = 'left') => {
+            const parentPane = resolvePaneElement(pane);
+            if (!parentPane) return;
+
+            const wvContainer = document.createElement('div');
+            wvContainer.id = 'wv-container-' + tab.id;
+            wvContainer.className = 'webview-container';
+
+            const wv = document.createElement('webview');
+            wv.id = 'wv-' + tab.id;
+            wv.src = tab.url;
+            wv.style.cssText = 'width: 100%; height: 100%;';
+            wv.setAttribute('allowpopups', '');
+            wv.setAttribute('partition', 'persist:wrapper');
+            wv.setAttribute('webpreferences', 'contextIsolation=yes, sandbox=yes, nativeWindowOpen=yes, javascript=yes, webSecurity=yes');
+            wv.setAttribute('useragent', MODERN_UA);
+
+            wvContainer.appendChild(wv);
+            parentPane.appendChild(wvContainer);
+
+            tab.pane = pane;
+            tab.webview = wv;
+            tab.container = wvContainer;
+            bindTabWebviewEvents(tab, wv);
+        };
+
+        const restoreAppState = (savedState) => {
+            if (!savedState || typeof savedState !== 'object') return;
+
+            isRestoringState = true;
+            try {
+                const savedTabs = Array.isArray(savedState.tabs) ? savedState.tabs : [];
+                const usedIds = new Set();
+                const restoredIdMap = new Map();
+
+                tabs.forEach((tab) => {
+                    if (tab.previewTimer) clearTimeout(tab.previewTimer);
+                    tab.container?.remove();
+                });
+
+                tabs = [];
+                activeTabId = null;
+                removeLegacySplitWebview();
+                hideAllPaneLoaders();
+                hideTabOverview();
+
+                savedTabs.forEach((savedTab) => {
+                    const safeUrl = normalizeNavigableUrl(savedTab?.url || '') || 'https://www.google.com';
+                    const savedId = typeof savedTab?.id === 'string' ? savedTab.id : '';
+                    const tabId = createUniqueTabId(savedId, usedIds);
+                    const pane = savedTab?.pane === 'right' ? 'right' : 'left';
+                    const title = typeof savedTab?.title === 'string' && savedTab.title.trim()
+                        ? savedTab.title
+                        : 'New Tab';
+                    const favicon = isSafeImageUrl(savedTab?.favicon) ? savedTab.favicon : '';
+
+                    if (savedId) {
+                        restoredIdMap.set(savedId, tabId);
+                    }
+
+                    const restoredTab = {
+                        id: tabId,
+                        url: safeUrl,
+                        title,
+                        favicon,
+                        pane
+                    };
+                    tabs.push(restoredTab);
+                    createTabWebview(restoredTab, pane);
+                });
+
+                const resolveRestoredTabId = (tabId) => {
+                    if (typeof tabId !== 'string' || !tabId) return null;
+                    if (restoredIdMap.has(tabId)) return restoredIdMap.get(tabId);
+                    return tabs.some((tab) => tab.id === tabId) ? tabId : null;
+                };
+
+                const findTabById = (tabId) => {
+                    if (!tabId) return null;
+                    return tabs.find((tab) => tab.id === tabId) || null;
+                };
+
+                const dashboardWv = document.getElementById('wv-left');
+                const restoredRatio = clampSplitRatio(savedState.splitRatio, 1.0);
+                const restoredFocusedPane = savedState.focusedPane === 'right' ? 'right' : 'left';
+                const restoredOverviewPane = savedState?.tabOverview?.pane === 'left' ? 'left' : 'right';
+
+                splitRatioAnimationActive = false;
+                splitAnimationTargetRatio = restoredRatio;
+                splitRatio = restoredRatio;
+                updateViewModeState();
+                attachTabOverviewToPane(restoredOverviewPane);
+
+                tabs.forEach((tab) => tab.container?.classList.remove('active'));
+
+                const restoredLeftVisibleId = resolveRestoredTabId(savedState?.visibleTabs?.left);
+                const restoredRightVisibleId = resolveRestoredTabId(savedState?.visibleTabs?.right);
+                const restoredActiveId = resolveRestoredTabId(savedState?.activeTabId);
+
+                const splitLikeRestore = restoredRatio < 0.99;
+                if (splitLikeRestore) {
+                    let leftTab = findTabById(restoredLeftVisibleId) || tabs.find((tab) => getTabPane(tab) === 'left') || null;
+                    let rightTab = findTabById(restoredRightVisibleId) || tabs.find((tab) => getTabPane(tab) === 'right') || null;
+
+                    if (leftTab && rightTab && leftTab.id === rightTab.id) {
+                        rightTab = tabs.find((tab) => tab.id !== leftTab.id) || null;
+                    }
+
+                    if (leftTab) {
+                        moveTabToPane(leftTab, 'left');
+                        leftTab.container?.classList.add('active');
+                    }
+
+                    if (rightTab) {
+                        moveTabToPane(rightTab, 'right');
+                        rightTab.container?.classList.add('active');
+                    }
+
+                    if (dashboardWv) {
+                        if (leftTab) {
+                            dashboardWv.style.opacity = '0';
+                            dashboardWv.style.pointerEvents = 'none';
+                        } else {
+                            dashboardWv.style.opacity = '1';
+                            dashboardWv.style.pointerEvents = 'auto';
+                        }
+                    }
+
+                    const fallbackActive = findTabById(restoredActiveId)
+                        || (restoredFocusedPane === 'right' ? rightTab : leftTab)
+                        || rightTab
+                        || leftTab
+                        || null;
+                    activeTabId = fallbackActive ? fallbackActive.id : null;
+
+                    const nextFocusedPane = restoredFocusedPane === 'right' && rightTab ? 'right' : 'left';
+                    setFocusedPane(nextFocusedPane, { notify: false });
+                } else {
+                    let singleTab = findTabById(restoredActiveId)
+                        || findTabById(restoredLeftVisibleId)
+                        || findTabById(restoredRightVisibleId)
+                        || tabs[0]
+                        || null;
+
+                    if (singleTab && getTabPane(singleTab) === 'right') {
+                        moveTabToPane(singleTab, 'left');
+                    }
+
+                    if (singleTab) {
+                        singleTab.container?.classList.add('active');
+                    }
+
+                    if (dashboardWv) {
+                        if (singleTab) {
+                            dashboardWv.style.opacity = '0';
+                            dashboardWv.style.pointerEvents = 'none';
+                        } else {
+                            dashboardWv.style.opacity = '1';
+                            dashboardWv.style.pointerEvents = 'auto';
+                        }
+                    }
+
+                    activeTabId = singleTab ? singleTab.id : null;
+                    setFocusedPane('left', { notify: false });
+                }
+
+                const shouldRestoreOverview = Boolean(savedState?.tabOverview?.visible) && splitLikeRestore;
+                if (shouldRestoreOverview) {
+                    showTabOverview();
+                    const overviewGrid = document.getElementById('overview-grid');
+                    const restoredScrollTop = Number(savedState?.tabOverview?.scrollTop ?? savedState?.gridScrollTop ?? 0);
+                    if (overviewGrid && Number.isFinite(restoredScrollTop) && restoredScrollTop > 0) {
+                        overviewGrid.scrollTop = restoredScrollTop;
+                    }
+                } else {
+                    hideTabOverview();
+                }
+
+                syncLayoutMode();
+                applyFocusedPaneStyles();
+                updateToolbarStatus();
+                notifyTabsUpdate();
+                startLoop();
+            } finally {
+                isRestoringState = false;
+            }
+        };
+
+        // Listen for restore-state from Electron main process
+        window.electronAPI?.onRestoreState((savedState) => {
+            console.log('Restoring state:', savedState);
+            restoreAppState(savedState);
+        });
+
+        // Helper function to notify React component about tab changes
+        const notifyTabsUpdate = () => {
+            console.log('notifyTabsUpdate called, tabs:', tabs.length, 'activeTabId:', activeTabId);
+            syncTopChromeAvailability();
+            updateToolbarStatus();
+            updateBookmarkButtonState();
+            window.dispatchEvent(new CustomEvent('tabs-updated', {
+                detail: {
+                    tabs: tabs.map(t => ({
+                        id: t.id,
+                        url: t.url,
+                        title: t.title,
+                        favicon: t.favicon || ''
+                    })),
+                    activeTabId: activeTabId
+                }
+            }));
+        };
+
+        // Listen for React requesting initial state
+        window.addEventListener('request-tabs-state', () => {
+            console.log('React requested tabs state, sending current state');
+            notifyTabsUpdate();
+        });
+
+        // Listen for tab actions from React component
+        window.addEventListener('switch-tab', (e) => {
+            const { tabId } = e.detail;
+            switchTab(tabId, { keepOverviewOpen: true });
+        });
+
+        window.addEventListener('close-tab', (e) => {
+            const { tabId } = e.detail;
+            showTopChrome();
+            const event = new MouseEvent('click', { bubbles: true });
+            closeTab(event, tabId);
+        });
+
+        window.electronAPI?.history?.onReopenClosedTab?.((tab) => {
+            const fallbackTab = tab || lastClosedTabSnapshot;
+            if (!fallbackTab?.url) {
+                return;
+            }
+
+            addNewTab(fallbackTab.url, {
+                pane: fallbackTab.pane === 'right' ? 'right' : 'left',
+                autoSplit: fallbackTab.pane === 'right',
+            });
+        });
+
+        window.addEventListener('add-tab', (e) => {
+            const { url } = e.detail;
+            const overviewOpen = isTabOverviewVisible();
+            const pane = overviewOpen ? getTabOverviewPane() : getActionPane();
+            if (overviewOpen) {
+                setFocusedPane(pane, { notify: false });
+            }
+            addNewTab(url, { pane, autoSplit: false, keepOverviewOpen: false });
+            if (overviewOpen) hideTabOverview();
+        });
+
+        const setDockState = (state) => {
+            dockState = state;
+            const hit = document.getElementById('dock-hit-area');
+            const back = document.getElementById('dock-backdrop');
+
+            document.body.classList.toggle('dock-open', state === 'open');
+
+            if (state === 'open') {
+                if (hit) hit.style.pointerEvents = 'none';
+                if (back) back.style.display = 'block';
+            } else {
+                if (back) back.style.display = 'none';
+                setTimeout(() => { if (hit) hit.style.pointerEvents = 'auto'; }, 500);
+            }
+            startLoop();
+        };
+
+        const openUrlInSplit = (url, browserMode = false) => {
+            setDockState('closed');
+            if (viewMode !== 'split') animateSplitRatio(0.5);
+            addNewTab(url, { pane: 'right' });
+        };
+
+        const openUrlFullscreen = (url) => {
+            removeLegacySplitWebview();
+            const isSplitLike = viewMode === 'split' || splitRatio < 0.99 || splitRatioAnimationActive;
+
+            if (isSplitLike) {
+                hideTabOverview();
+                animateSplitRatio(0.5);
+                const pane = getActionPane();
+                addNewTab(url, { pane, autoSplit: false });
+                return;
+            }
+
+            const existingTab = tabs.find(t => t.url === url && getTabPane(t) === 'left');
+
+            if (existingTab) {
+                switchTab(existingTab.id);
+            } else {
+                addNewTab(url, { pane: 'left' });
+            }
+        };
+
+        const addNewTab = (url, options = {}) => {
+            console.log('addNewTab called with URL:', url);
+            const requestedPane = options.pane || (viewMode === 'split' ? 'right' : 'left');
+            const pane = requestedPane === 'right' ? 'right' : 'left';
+            const keepOverviewOpen = options.keepOverviewOpen === true;
+            const usedIds = new Set(tabs.map((existingTab) => existingTab.id));
+            const tabId = createUniqueTabId(createRuntimeTabId(), usedIds);
+            const tab = {
+                id: tabId,
+                url: url,
+                title: 'New Tab',
+                pane
+            };
+            tabs.push(tab);
+            saveAppState();
+            removeLegacySplitWebview();
+
+            createTabWebview(tab, pane);
+
+            if (pane === 'right' && options.autoSplit !== false && splitRatio >= 0.99) {
+                animateSplitRatio(0.5);
+            }
+
+            switchTab(tabId, { keepOverviewOpen });
+            updateToolbarStatus();
+            notifyTabsUpdate();
+            return tabId;
+        };
+
+        const switchTab = (tabId, options = {}) => {
+            console.log('switchTab called with tabId:', tabId);
+            const tab = tabs.find(t => t.id === tabId);
+            if (!tab) return;
+            if (options.revealTopChrome !== false) {
+                showTopChrome();
+            }
+            const keepOverviewOpen = options.keepOverviewOpen === true;
+            syncLayoutMode();
+
+            // If split is not active, any right-pane tab must be brought to the visible left pane.
+            if ((!isSplitLikeMode() || isCollapsingToSingleLeft()) && getTabPane(tab) === 'right') {
+                moveTabToPane(tab, 'left');
+            }
+            let nextPane = getTabPane(tab);
+            const transitionToken = bumpPaneActivationToken(nextPane);
+
+            if (activeTabId === tabId && tab.container?.classList.contains('active')) {
+                // Only short-circuit when the tab is already active in a visible pane context.
+                if (!isSplitLikeMode() && nextPane === 'right') {
+                    // Continue full switch flow so the tab can be shown on left.
+                } else {
+                    setFocusedPane(nextPane);
+                    return;
+                }
+            }
+
+            const newContainer = tab.container;
+            const wvLeft = document.getElementById('wv-left');
+            const visibleInTargetPane = getVisibleTabForPane(nextPane);
+            const replacingDashboard = nextPane === 'left' && !visibleInTargetPane;
+
+            // Show loader
+            hideAllPaneLoaders();
+            showPaneLoader(nextPane);
+
+            // Hide current content only in target pane
+            if (visibleInTargetPane && visibleInTargetPane.id !== tabId) {
+                visibleInTargetPane.container?.classList.remove('active');
+                console.log('Hiding old tab in pane:', nextPane, visibleInTargetPane.id);
+            } else if (replacingDashboard) {
+                wvLeft.style.opacity = '0';
+                console.log('Hiding dashboard');
+            }
+
+            // Wait for fade out, then show new tab
+            setTimeout(() => {
+                if (!isPaneActivationTokenCurrent(nextPane, transitionToken)) return;
+                if (activeTabId !== tabId) return;
+                // Hide dashboard completely if it was visible
+                if (replacingDashboard) {
+                    wvLeft.style.pointerEvents = 'none';
+                }
+
+                // Show new tab container
+                newContainer.classList.add('active');
+
+                // Wait a bit for webview to render, then hide loader
+                hidePaneLoader(nextPane, 300, transitionToken);
+            }, 600);
+
+            activeTabId = tabId;
+            focusedPane = nextPane;
+            applyFocusedPaneStyles();
+            if (!keepOverviewOpen) {
+                hideTabOverview();
+            }
+            saveAppState();
+            notifyTabsUpdate();
+        };
+
+        const closeTab = (event, tabId) => {
+            console.log('closeTab called with tabId:', tabId);
+            event.stopPropagation();
+
+            const tab = tabs.find(t => t.id === tabId);
+            const isSplitTab = tab && getTabPane(tab) === 'right';
+            const shouldCollapseSplit = Boolean(isSplitTab && splitRatio < 0.99);
+            if (tab?.previewTimer) clearTimeout(tab.previewTimer);
+            if (tab) {
+                lastClosedTabSnapshot = {
+                    url: tab.url,
+                    title: tab.title,
+                    favicon: tab.favicon || '',
+                    pane: getTabPane(tab),
+                };
+                window.electronAPI?.history?.setLastClosedTab?.(lastClosedTabSnapshot);
+            }
+            tabs = tabs.filter(t => t.id !== tabId);
+            saveAppState();
+
+            // Remove webview container
+            if (tab && tab.container) {
+                tab.container.remove();
+            }
+
+            if (activeTabId === tabId) {
+                if (shouldCollapseSplit) {
+                    const leftFallback = tabs.find(t => getTabPane(t) === 'left');
+                    if (leftFallback) {
+                        switchTab(leftFallback.id);
+                    } else {
+                        switchToMainApp();
+                    }
+                } else if (tabs.length > 0) {
+                    switchTab(tabs[tabs.length - 1].id);
+                } else {
+                    switchToMainApp();
+                }
+            }
+
+            if (shouldCollapseSplit) {
+                animateSplitRatio(1.0);
+                hideTabOverview();
+                const activeTab = activeTabId ? tabs.find(t => t.id === activeTabId) : null;
+                if (activeTab && getTabPane(activeTab) === 'right') {
+                    activeTab.container?.classList.remove('active');
+                    activeTabId = null;
+                }
+            }
+
+            updateToolbarStatus();
+            notifyTabsUpdate();
+        };
+
+        const updateAddButtonPosition = () => {
+            const addBtn = document.getElementById('add-tab-trigger');
+            const container = document.getElementById('tabs-container');
+            const offset = container.offsetWidth;
+            addBtn.style.left = (105 + offset + (tabs.length > 0 ? 30 : 0)) + 'px';
+        };
+
+        const switchToMainApp = () => {
+            console.log('switchToMainApp called');
+            const wvLeft = document.getElementById('wv-left');
+            // Invalidate pending pane activation callbacks.
+            bumpPaneActivationToken('left');
+            bumpPaneActivationToken('right');
+            const shouldCollapseSplit = viewMode === 'split' || splitRatio < 0.99 || splitRatioAnimationActive;
+
+            if (shouldCollapseSplit) {
+                animateSplitRatio(1.0);
+                hideTabOverview();
+            }
+
+            // Show loader
+            hideAllPaneLoaders();
+            showPaneLoader('left');
+
+            // Hide all tab webviews (split can have two active at once)
+            tabs.forEach((tab) => {
+                if (tab.container) {
+                    tab.container.classList.remove('active');
+                }
+            });
+
+            // Wait for fade out, then show dashboard
+            setTimeout(() => {
+                wvLeft.style.pointerEvents = 'auto';
+                setTimeout(() => {
+                    wvLeft.style.opacity = '1';
+                    hidePaneLoader('left');
+                }, 100);
+            }, 600);
+
+            activeTabId = null;
+            removeLegacySplitWebview();
+            setFocusedPane('left', { notify: false });
+            syncLayoutMode();
+            saveAppState();
+            notifyTabsUpdate();
+        };
+
+        const animateSplitRatio = (targetRatio) => {
+            splitRatioAnimationActive = true;
+            splitAnimationTargetRatio = targetRatio;
+            const duration = 1200; // Even slower for smoother feel
+            const startTime = performance.now();
+            const startRatio = splitRatio;
+            startLoop();
+
+            // Trigger states early
+            const root = document.getElementById('window-root');
+            const tbSvg = document.getElementById('panel-toolbar');
+            if (targetRatio < 0.9) {
+                if (root) root.classList.add('splitview-active');
+                if (tbSvg) {
+                    tbSvg.classList.remove('active');
+                    void tbSvg.offsetWidth;
+                    tbSvg.classList.add('active');
+                }
+            }
+
+            const step = (now) => {
+                const elapsed = now - startTime;
+                const p = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - p, 3);
+                splitRatio = startRatio + (targetRatio - startRatio) * ease;
+                if (p < 1) requestAnimationFrame(step);
+                else {
+                    splitRatio = targetRatio; splitRatioAnimationActive = false;
+                    updateViewModeState();
+                }
+            };
+            requestAnimationFrame(step);
+        };
+
+        const updateViewModeState = () => {
+            const tbContainer = document.getElementById('toolbar-container');
+            const tbSvg = document.getElementById('panel-toolbar');
+            const root = document.getElementById('window-root');
+
+            // Toolbar logic removed as per user request to replace with Menu Bar
+            if (splitRatio >= 0.99) {
+                viewMode = 'single-left';
+                container.classList.remove('splitview-active');
+                root.classList.remove('splitview-active');
+                const tbContainer = document.getElementById('toolbar-container');
+                if (tbContainer) {
+                    tbContainer.classList.remove('active');
+                    setTimeout(() => {
+                        if (!tbContainer.classList.contains('active')) {
+                            tbContainer.style.display = 'none';
+                        }
+                    }, 300);
+                }
+            }
+            else {
+                viewMode = splitRatio <= 0.01 ? 'single-right' : 'split';
+                container.classList.add('splitview-active');
+                root.classList.add('splitview-active');
+
+                const tbContainer = document.getElementById('toolbar-container');
+                if (tbContainer) {
+                    tbContainer.style.display = 'flex';
+                    // Force reflow
+                    tbContainer.offsetHeight;
+                    tbContainer.classList.add('active');
+                }
+            }
+            syncLayoutMode();
+            applyFocusedPaneStyles();
+            saveAppState();
+        };
+
+        const onMouseMove = (e) => {
+            if (!isDragging) return;
+            const rect = wrapper.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            if (x < 30) x = 0; if (x > rect.width - 30) x = rect.width;
+            splitRatio = x / rect.width;
+        };
+
+        const onMouseUp = () => {
+            isDragging = false; document.body.classList.remove('is-resizing');
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            updateViewModeState(); startLoop();
+        };
+
+        splitDivider.addEventListener('mousedown', (e) => {
+            isDragging = true; document.body.classList.add('is-resizing');
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+            startLoop(); e.preventDefault();
+        });
+
+        const wvLeft = document.getElementById('wv-left');
+        const CHATWOOT_BASE_URL = 'http://127.0.0.1:3001';
+        const CHATWOOT_STYLE_ID = 'blackshell-chatwoot-shell-style';
+        const CHATWOOT_SIDEBAR_SHELL_SCRIPT = `
+            (() => {
+                const styleId = '${CHATWOOT_STYLE_ID}';
+                if (!document.getElementById(styleId)) {
+                    const style = document.createElement('style');
+                    style.id = styleId;
+                    style.textContent = \`
+                        aside:first-of-type {
+                            display: none !important;
+                        }
+                        aside:first-of-type + main,
+                        div.flex.flex-grow.overflow-hidden.text-n-slate-12 > main {
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            flex: 1 1 100% !important;
+                        }
+                    \`;
+                    document.head.appendChild(style);
+                }
+
+                const sidebar = document.querySelector('aside');
+                if (sidebar) {
+                    sidebar.style.display = 'none';
+                }
+
+                const main = document.querySelector('main');
+                if (main) {
+                    main.style.width = '100%';
+                    main.style.maxWidth = '100%';
+                    main.style.flex = '1 1 100%';
+                }
+            })();
+        `;
+
+        const resolveCurrentChatwootAccountId = () => {
+            const currentUrl = typeof wvLeft.getURL === 'function'
+                ? wvLeft.getURL()
+                : wvLeft.getAttribute('src') || `${CHATWOOT_BASE_URL}/app`;
+            const match = currentUrl.match(/\/app\/accounts\/(\d+)/);
+            return match?.[1] || '1';
+        };
+
+        const normalizeChatwootUrl = (path) => {
+            if (!path) return `${CHATWOOT_BASE_URL}/app`;
+            if (/^https?:\/\//.test(path)) return path;
+
+            const accountId = resolveCurrentChatwootAccountId();
+            const resolvedPath = path.replace(':accountId', accountId);
+
+            if (resolvedPath.startsWith('/app')) {
+                return `${CHATWOOT_BASE_URL}${resolvedPath}`;
+            }
+
+            if (resolvedPath.startsWith('/')) {
+                return `${CHATWOOT_BASE_URL}${resolvedPath}`;
+            }
+
+            return `${CHATWOOT_BASE_URL}/${resolvedPath}`;
+        };
+
+        const isChatwootUrl = (url) => {
+            return typeof url === 'string' && url.startsWith(CHATWOOT_BASE_URL);
+        };
+
+        const applyChatwootShellStyles = (webview) => {
+            if (!webview || typeof webview.executeJavaScript !== 'function') return;
+            webview.executeJavaScript(CHATWOOT_SIDEBAR_SHELL_SCRIPT).catch((error) => {
+                console.warn('Failed to apply Chatwoot shell styles:', error);
+            });
+        };
+
+        const maybeApplyChatwootShellStyles = (webview) => {
+            if (!webview) return;
+
+            const currentUrl = typeof webview.getURL === 'function'
+                ? webview.getURL()
+                : webview.getAttribute('src') || '';
+
+            if (!isChatwootUrl(currentUrl)) return;
+            applyChatwootShellStyles(webview);
+        };
+
+        const navigateMainDashboardRoute = (path) => {
+            const targetUrl = normalizeChatwootUrl(path);
+            const performNavigation = () => {
+                hideAllPaneLoaders();
+                showPaneLoader('left');
+                wvLeft.style.opacity = '0';
+
+                const onStopLoading = () => {
+                    maybeApplyChatwootShellStyles(wvLeft);
+                    setTimeout(() => {
+                        hidePaneLoader('left');
+                        wvLeft.style.opacity = '1';
+                    }, 100);
+                    wvLeft.removeEventListener('did-stop-loading', onStopLoading);
+                };
+
+                wvLeft.addEventListener('did-stop-loading', onStopLoading);
+
+                try {
+                    wvLeft.loadURL(targetUrl);
+                } catch (error) {
+                    console.warn('Failed to navigate main dashboard route:', targetUrl, error);
+                    wvLeft.src = targetUrl;
+                }
+            };
+
+            if (activeTabId || isSplitLikeMode()) {
+                switchToMainApp();
+                setTimeout(performNavigation, 720);
+            } else {
+                performNavigation();
+            }
+
+            setDockState('closed');
+        };
+
+        wvLeft.setAttribute('useragent', MODERN_UA);
+        wvLeft.addEventListener('did-finish-load', () => console.log('Main webview loaded'));
+        wvLeft.addEventListener('dom-ready', () => maybeApplyChatwootShellStyles(wvLeft));
+        wvLeft.addEventListener('did-stop-loading', () => maybeApplyChatwootShellStyles(wvLeft));
+        wvLeft.addEventListener('focus', () => {
+            closeDockIfOpen();
+            setFocusedPane('left');
+        });
+        wvLeft.addEventListener('will-navigate', (e) => {
+            if (!e?.url) return;
+
+            if (openAuthPopupForTab(null, e.url, typeof wvLeft.getTitle === 'function' ? wvLeft.getTitle() : '')) {
+                if (typeof e.preventDefault === 'function') {
+                    e.preventDefault();
+                }
+            }
+        });
+        wvLeft.addEventListener('new-window', (e) => {
+            if (typeof e.preventDefault === 'function') {
+                e.preventDefault();
+            }
+
+            if (openAuthPopupForTab(null, e.url, typeof wvLeft.getTitle === 'function' ? wvLeft.getTitle() : '', e.features || '')) {
+                return;
+            }
+
+            if (e?.url) {
+                try {
+                    wvLeft.loadURL(e.url);
+                } catch (error) {
+                    console.warn('Failed to load popup URL in main webview:', e.url, error);
+                }
+            }
+        });
+
+        const paneLeft = document.getElementById('pane-left');
+        const paneRight = document.getElementById('pane-right');
+        if (paneLeft) {
+            paneLeft.addEventListener('mousedown', () => {
+                closeDockIfOpen();
+                setFocusedPane('left');
+            });
+        }
+        if (paneRight) {
+            paneRight.addEventListener('mousedown', () => {
+                closeDockIfOpen();
+                if (isSplitLikeMode()) setFocusedPane('right');
+            });
+        }
+
+        splitTrigger.addEventListener('click', () => {
+            if (viewMode === 'split') {
+                animateSplitRatio(1.0);
+                hideTabOverview();
+                removeLegacySplitWebview();
+                hideAllPaneLoaders();
+
+                let leftVisibleTab = tabs.find(t => getTabPane(t) === 'left');
+                const dashboardWv = document.getElementById('wv-left');
+
+                if (leftVisibleTab) {
+                    tabs.forEach((tab) => {
+                        if (tab.id !== leftVisibleTab.id) {
+                            tab.container?.classList.remove('active');
+                        }
+                    });
+
+                    if (activeTabId === leftVisibleTab.id) {
+                        leftVisibleTab.container?.classList.add('active');
+                        wvLeft.style.pointerEvents = 'none';
+                        wvLeft.style.opacity = '0';
+                        setFocusedPane('left', { notify: false });
+                        notifyTabsUpdate();
+                    } else {
+                        switchTab(leftVisibleTab.id);
+                    }
+                } else {
+                    tabs.forEach((tab) => {
+                        tab.container?.classList.remove('active');
+                    });
+                    activeTabId = null;
+                    if (dashboardWv) {
+                        dashboardWv.style.pointerEvents = 'auto';
+                        dashboardWv.style.opacity = '1';
+                    }
+                    setFocusedPane('left', { notify: false });
+                    notifyTabsUpdate();
+                }
+            } else {
+                if (tabs.length === 0) {
+                    const splitUrl = 'https://www.google.com';
+                    animateSplitRatio(0.5);
+                    hideTabOverview();
+                    addNewTab(splitUrl, { pane: 'right', autoSplit: false });
+                } else if (tabs.length === 1) {
+                    animateSplitRatio(0.5);
+                    removeLegacySplitWebview();
+                    const singleTab = tabs[0];
+                    moveTabToPane(singleTab, 'right');
+                    hideAllPaneLoaders();
+                    showPaneLoader('right');
+
+                    const dashboardWv = document.getElementById('wv-left');
+                    if (dashboardWv) {
+                        dashboardWv.style.pointerEvents = 'auto';
+                        dashboardWv.style.opacity = '1';
+                    }
+
+                    setTimeout(() => {
+                        singleTab.container?.classList.add('active');
+                        hidePaneLoader('right', 250);
+                    }, 60);
+
+                    activeTabId = singleTab.id;
+                    setFocusedPane('right', { notify: false });
+                    hideTabOverview();
+                    saveAppState();
+                    notifyTabsUpdate();
+                } else if (tabs.length === 2) {
+                    animateSplitRatio(0.5);
+                    removeLegacySplitWebview();
+                    const active = tabs.find(t => t.id === activeTabId);
+                    const rightTab = active || tabs[1];
+                    const leftTab = tabs.find(t => t.id !== rightTab.id) || tabs[0];
+                    showSplitPair(leftTab, rightTab);
+                } else {
+                    animateSplitRatio(0.5);
+                    removeLegacySplitWebview();
+                    showTabOverview();
+                }
+            }
+        });
+
+        if (homeTrigger) {
+            homeTrigger.addEventListener('click', () => {
+                const wvLeft = document.getElementById('wv-left');
+
+                if (wvLeft && wvLeft.src !== 'http://127.0.0.1:3001') {
+                    // Show loader with smooth fade in
+                    hideAllPaneLoaders();
+                    showPaneLoader('left');
+
+                    // Smooth crossfade: fade out current webview
+                    wvLeft.style.opacity = '0';
+
+                    // After fade out, change URL
+                    setTimeout(() => {
+                        // Set up listener for when dashboard loads
+                        const onStopLoading = () => {
+                            setTimeout(() => {
+                                // Smooth fade out loader
+                                hidePaneLoader('left');
+                                // Smooth fade in webview
+                                wvLeft.style.opacity = '1';
+                            }, 100);
+                            wvLeft.removeEventListener('did-stop-loading', onStopLoading);
+                        };
+
+                        wvLeft.addEventListener('did-stop-loading', onStopLoading);
+                        wvLeft.src = 'http://127.0.0.1:3001';
+                    }, 600);
+                }
+                switchToMainApp();
+                setDockState('closed');
+            });
+        }
+
+        if (browserTrigger) {
+            browserTrigger.addEventListener('click', () => {
+                openUrlFullscreen('https://www.google.com');
+                setDockState('closed');
+            });
+        }
+
+        const getActiveWebview = () => {
+            const actionPane = getActionPane();
+            const paneTab = getVisibleTabForPane(actionPane);
+            if (paneTab?.webview) return paneTab.webview;
+
+            const leftTab = getVisibleTabForPane('left');
+            if (leftTab?.webview) return leftTab.webview;
+
+            return document.getElementById('wv-left');
+        };
+
+        let bookmarksCache = [];
+
+        const notifyBookmarksUpdated = () => {
+            window.dispatchEvent(new CustomEvent('bookmarks-updated'));
+        };
+
+        const getActiveBookmarkPayload = () => {
+            const wv = getActiveWebview();
+            const activeTab = activeTabId ? tabs.find((tab) => tab.id === activeTabId) : null;
+            const currentUrl = activeTab?.url
+                || (wv && typeof wv.getURL === 'function' ? wv.getURL() : '')
+                || '';
+            const normalizedUrl = normalizeNavigableUrl(currentUrl, currentUrl);
+            if (!normalizedUrl) return null;
+
+            const currentTitle = activeTab?.title
+                || (wv && typeof wv.getTitle === 'function' ? wv.getTitle() : '')
+                || normalizedUrl;
+
+            return {
+                url: normalizedUrl,
+                title: currentTitle,
+            };
+        };
+
+        const updateBookmarkButtonState = () => {
+            if (!tBookmark) return;
+
+            const payload = getActiveBookmarkPayload();
+            const isBookmarked = Boolean(
+                payload?.url
+                && bookmarksCache.some((bookmark) => bookmark?.url === payload.url)
+            );
+
+            tBookmark.dataset.bookmarked = isBookmarked ? 'true' : 'false';
+        };
+
+        const loadBookmarks = async () => {
+            const items = await window.electronAPI?.bookmarks?.list?.();
+            bookmarksCache = Array.isArray(items) ? items : [];
+            updateBookmarkButtonState();
+        };
+
+        const addActivePageToBookmarks = async () => {
+            const payload = getActiveBookmarkPayload();
+            if (!payload) return;
+            await window.electronAPI?.bookmarks?.add?.(payload.url, payload.title);
+            notifyBookmarksUpdated();
+        };
+
+        const tSearch = document.getElementById('toolbar-search');
+        const tBack = document.getElementById('toolbar-share'); // Usado como Atrás
+        const tRefresh = document.getElementById('toolbar-refresh');
+        const tForward = document.getElementById('toolbar-action'); // Usado como Adelante
+        const tBookmark = document.getElementById('toolbar-bookmark');
+
+        window.addEventListener('bookmarks-updated', () => {
+            void loadBookmarks();
+        });
+        void loadBookmarks();
+
+        const searchModal = document.getElementById('search-modal');
+
+        if (tSearch && searchModal) {
+            tSearch.onclick = (e) => {
+                e.stopPropagation();
+                searchModal.classList.add('active');
+                document.body.classList.add('search-modal-open');
+                setTimeout(() => {
+                    const input = document.querySelector('#search-react-root input');
+                    if (input instanceof HTMLInputElement) {
+                        input.focus();
+                    }
+                }, 150);
+            };
+        }
+
+        // Exponer addNewTab globalmente
+        window.addNewTab = addNewTab;
+        window.navigateMainDashboardRoute = navigateMainDashboardRoute;
+
+        // Cerrar modal al hacer click en el backdrop
+        if (searchModal) {
+            searchModal.addEventListener('click', (e) => {
+                if (e.target === searchModal) {
+                    searchModal.classList.remove('active');
+                    document.body.classList.remove('search-modal-open');
+                }
+            });
+        }
+
+        window.electronAPI?.authPopup?.onCompleted?.((payload) => {
+            const sourceTabId = payload?.sourceTabId;
+            const tab = sourceTabId ? tabs.find((existingTab) => existingTab.id === sourceTabId) : null;
+            const targetWebview = tab?.webview || getActiveWebview();
+
+            if (targetWebview && typeof targetWebview.reload === 'function') {
+                setTimeout(() => {
+                    targetWebview.reload();
+                }, 120);
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
+                e.preventDefault();
+            }
+        });
+
+        if (tBack) tBack.onclick = () => {
+            const wv = getActiveWebview();
+            if (wv && wv.canGoBack()) {
+                wv.goBack();
+            } else {
+                console.log('No hay historial para ir atrás');
+            }
+        };
+
+        if (tRefresh) tRefresh.onclick = () => {
+            const wv = getActiveWebview();
+            if (wv) wv.reload();
+        };
+
+        if (tBookmark) tBookmark.onclick = async () => {
+            await addActivePageToBookmarks();
+        };
+
+        // Add tab button
+        const addTabBtn = document.getElementById('add-tab-trigger');
+        if (addTabBtn) {
+            addTabBtn.onclick = (e) => {
+                e.stopPropagation();
+                const overviewOpen = isTabOverviewVisible();
+                const pane = overviewOpen ? getTabOverviewPane() : getActionPane();
+                if (overviewOpen) {
+                    setFocusedPane(pane, { notify: false });
+                }
+                addNewTab('https://www.google.com', { pane, autoSplit: false, keepOverviewOpen: false });
+                if (overviewOpen) hideTabOverview();
+            };
+        }
+
+        const openTabFromOverview = (tabId) => {
+            const tab = tabs.find(t => t.id === tabId);
+            if (!tab) return;
+            const overviewPane = getTabOverviewPane();
+
+            if (isSplitLikeMode()) {
+                const oppositePane = overviewPane === 'right' ? 'left' : 'right';
+                const oppositeVisibleTab = getVisibleTabForPane(oppositePane);
+                if (oppositeVisibleTab && oppositeVisibleTab.id === tab.id) {
+                    setFocusedPane(overviewPane, { notify: false });
+                    hideTabOverview();
+                    return;
+                }
+
+                moveTabToPane(tab, overviewPane);
+                setFocusedPane(overviewPane, { notify: false });
+                switchTab(tab.id);
+                hideTabOverview();
+                return;
+            }
+
+            switchTab(tab.id);
+            hideTabOverview();
+        };
+
+        const showTabOverview = () => {
+            const overview = document.getElementById('tab-overview');
+            const grid = document.getElementById('overview-grid');
+            if (!overview || !grid) return;
+
+            const overviewPane = getTabOverviewPane();
+            setFocusedPane(overviewPane, { notify: false });
+
+            grid.innerHTML = '';
+
+            const overviewTabs = getTabOverviewCandidates();
+
+            overviewTabs.forEach(tab => {
+                const card = document.createElement('div');
+                card.className = 'tab-card';
+                card.dataset.tabId = tab.id;
+                card.onclick = () => {
+                    openTabFromOverview(tab.id);
+                };
+
+                const header = document.createElement('div');
+                header.className = 'tab-card-header';
+
+                if (isSafeImageUrl(tab.favicon)) {
+                    const favicon = document.createElement('img');
+                    favicon.className = 'tab-card-favicon';
+                    favicon.alt = '';
+                    favicon.src = tab.favicon;
+                    favicon.referrerPolicy = 'no-referrer';
+                    header.appendChild(favicon);
+                } else {
+                    const fallback = document.createElement('span');
+                    fallback.className = 'tab-card-favicon-fallback';
+                    fallback.setAttribute('aria-hidden', 'true');
+                    header.appendChild(fallback);
+                }
+
+                const title = document.createElement('span');
+                title.className = 'tab-card-title';
+                title.textContent = tab.title || 'Nueva Pestaña';
+                header.appendChild(title);
+
+                const body = document.createElement('div');
+                body.className = 'tab-card-body';
+                body.appendChild(createTabCardPreviewNode(tab));
+
+                card.appendChild(header);
+                card.appendChild(body);
+                grid.appendChild(card);
+                scheduleTabPreviewCapture(tab, 0);
+            });
+
+            // Add (+) button
+            const addCard = document.createElement('div');
+            addCard.className = 'tab-card tab-card-add';
+            const plus = document.createElement('span');
+            plus.className = 'plus-icon';
+            plus.textContent = '+';
+            addCard.appendChild(plus);
+            addCard.onclick = () => {
+                const pane = isTabOverviewVisible() ? getTabOverviewPane() : getActionPane();
+                setFocusedPane(pane, { notify: false });
+                addNewTab('https://www.google.com', { pane, autoSplit: false, keepOverviewOpen: false });
+                hideTabOverview();
+            };
+            grid.appendChild(addCard);
+
+            overview.style.display = 'flex';
+            syncLayoutMode();
+            startTabOverviewPreviewLoop();
+            saveAppState();
+        };
+
+        const hideTabOverview = () => {
+            const overview = document.getElementById('tab-overview');
+            if (overview) overview.style.display = 'none';
+            stopTabOverviewPreviewLoop();
+            syncLayoutMode();
+            saveAppState();
+        };
+
+        if (tForward) tForward.onclick = () => {
+            const wv = getActiveWebview();
+            if (wv && wv.canGoForward()) {
+                wv.goForward();
+            } else {
+                console.log('No hay historial para ir adelante');
+            }
+        };
+
+        // ===========================================
+        // Context Menu Implementation
+        // ===========================================
+
+        // Subscribe to context menu actions
+        const contextMenuUnsubscribe = window.electronAPI?.contextMenu?.onAction((event, action) => {
+            handleContextMenuAction(action);
+        });
+
+        const detectContextMenu = (e) => {
+            const target = e.target;
+
+            // Check for link
+            const link = target.closest('a');
+            if (link && link.href && !link.href.startsWith('javascript:')) {
+                return { type: 'link', data: { url: link.href, text: link.textContent?.trim() || link.href } };
+            }
+
+            // Check for image
+            if (target.tagName === 'IMG' && target.src) {
+                return { type: 'image', data: { src: target.src, alt: target.alt || '' } };
+            }
+
+            // Check for input/textarea
+            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+                const input = target;
+                const hasSelection = input.selectionStart !== input.selectionEnd;
+                return {
+                    type: 'input',
+                    data: {
+                        hasSelection,
+                        isEditable: !input.readOnly,
+                        value: input.value
+                    }
+                };
+            }
+
+            // Check for text selection
+            const selection = window.getSelection();
+            if (selection && selection.toString().length > 0) {
+                return { type: 'text', data: { selectedText: selection.toString() } };
+            }
+
+            // Default navigation context
+            return { type: 'navigation', data: {} };
+        };
+
+        // Complete context menu action handler
+        const handleContextMenuAction = (actionData) => {
+            const { action, data } = actionData;
+            console.log('Context menu action:', action, data);
+
+            try {
+                switch (action) {
+                    // === CLIPBOARD ===
+                    case 'copy':
+                    case 'copyLink':
+                    case 'copyLinkText':
+                    case 'copyImageUrl':
+                    case 'copyVideoUrl':
+                    case 'copyAudioUrl':
+                    case 'copyPageUrl':
+                    case 'copyTabUrl':
+                    case 'copyFrameUrl':
+                        const textToCopy = data?.text || data?.url || data?.src;
+                        if (textToCopy) {
+                            navigator.clipboard.writeText(textToCopy);
+                        }
+                        break;
+
+                    case 'paste':
+                        navigator.clipboard.readText().then(text => {
+                            document.execCommand('insertText', false, text);
+                        }).catch(err => console.error('Paste failed:', err));
+                        break;
+
+                    case 'cut':
+                        document.execCommand('cut');
+                        break;
+
+                    case 'delete':
+                        document.execCommand('delete');
+                        break;
+
+                    case 'selectAll':
+                    case 'select-all':
+                        document.execCommand('selectAll');
+                        break;
+
+                    case 'undo':
+                        document.execCommand('undo');
+                        break;
+
+                    case 'redo':
+                        document.execCommand('redo');
+                        break;
+
+                    // === NAVIGATION ===
+                    case 'go-back':
+                    case 'goBack':
+                        {
+                            const wv = getActiveWebview();
+                            if (wv && wv.canGoBack && wv.canGoBack()) {
+                                wv.goBack();
+                            }
+                        }
+                        break;
+
+                    case 'go-forward':
+                    case 'goForward':
+                        {
+                            const wv = getActiveWebview();
+                            if (wv && wv.canGoForward && wv.canGoForward()) {
+                                wv.goForward();
+                            }
+                        }
+                        break;
+
+                    case 'reload':
+                        {
+                            const wv = getActiveWebview();
+                            if (wv) wv.reload();
+                        }
+                        break;
+
+                    case 'reload-no-cache':
+                        {
+                            const wv = getActiveWebview();
+                            if (wv) wv.reloadIgnoringCache();
+                        }
+                        break;
+
+                    // === LINK ===
+                    case 'open-link':
+                        if (data?.url) {
+                            const wv = getActiveWebview();
+                            if (wv) wv.src = data.url;
+                        }
+                        break;
+
+                    case 'open-link-new-tab':
+                        if (data?.url) {
+                            const oppositePane = getActionPane() === 'left' ? 'right' : 'left';
+                            addNewTab(data.url, { pane: oppositePane, autoSplit: !isSplitLikeMode() });
+                        }
+                        break;
+
+                    case 'open-link-background':
+                        if (data?.url) {
+                            addNewTab(data.url, { pane: 'left', activate: false });
+                        }
+                        break;
+
+                    case 'open-link-split-pane':
+                        if (data?.url) {
+                            addNewTab(data.url, { pane: 'right', autoSplit: true });
+                        }
+                        break;
+
+                    case 'open-link-new-window':
+                        if (data?.url) {
+                            window.electronAPI?.shell?.openExternal?.(data.url);
+                        }
+                        break;
+
+                    case 'copy-link':
+                    case 'copy-link-html':
+                        if (data?.url) {
+                            navigator.clipboard.writeText(data.url);
+                        }
+                        break;
+
+                    // === IMAGE ===
+                    case 'open-image':
+                    case 'open-image-new-tab':
+                        if (data?.src) {
+                            addNewTab(data.src, { pane: 'left' });
+                        }
+                        break;
+
+                    case 'open-image-background':
+                        if (data?.src) {
+                            const oppositePane = getActionPane() === 'left' ? 'right' : 'left';
+                            addNewTab(data.src, { pane: oppositePane, autoSplit: false });
+                        }
+                        break;
+
+                    case 'save-image-as':
+                    case 'download-image':
+                        if (data?.src) {
+                            window.electronAPI?.downloads?.saveImage?.(data.src, data.alt || 'image.jpg');
+                        }
+                        break;
+
+                    case 'copy-image':
+                        if (data?.src) {
+                            window.electronAPI?.clipboard?.writeImage?.(data.src);
+                        }
+                        break;
+
+                    case 'copy-image-url':
+                    case 'copy-image-address':
+                        if (data?.src) {
+                            navigator.clipboard.writeText(data.src);
+                        }
+                        break;
+
+                    case 'search-image-with-google':
+                        if (data?.src) {
+                            addNewTab(`https://www.google.com/searchbyimage?image_url=${encodeURIComponent(data.src)}`, { pane: 'left' });
+                        }
+                        break;
+
+                    // === VIDEO/AUDIO ===
+                    case 'toggle-video-play-pause':
+                    case 'toggle-audio-play-pause':
+                    case 'play-pause':
+                        {
+                            const mediaEl = document.querySelector('video:not([paused])') || document.querySelector('video');
+                            if (mediaEl) {
+                                mediaEl.paused ? mediaEl.play() : mediaEl.pause();
+                            }
+                        }
+                        break;
+
+                    case 'toggle-video-mute':
+                    case 'toggle-audio-mute':
+                        {
+                            const mediaEl = document.querySelector('video') || document.querySelector('audio');
+                            if (mediaEl) mediaEl.muted = !mediaEl.muted;
+                        }
+                        break;
+
+                    case 'toggle-video-loop':
+                    case 'toggle-audio-loop':
+                        {
+                            const mediaEl = document.querySelector('video') || document.querySelector('audio');
+                            if (mediaEl) mediaEl.loop = !mediaEl.loop;
+                        }
+                        break;
+
+                    case 'set-video-speed':
+                    case 'set-audio-speed':
+                        {
+                            const mediaEl = document.querySelector('video') || document.querySelector('audio');
+                            if (mediaEl && data?.speed) mediaEl.playbackRate = data.speed;
+                        }
+                        break;
+
+                    case 'toggle-video-pip':
+                        {
+                            const video = document.querySelector('video');
+                            if (video) {
+                                if (document.pictureInPictureElement) {
+                                    document.exitPictureInPicture();
+                                } else if (video.requestPictureInPicture) {
+                                    video.requestPictureInPicture();
+                                }
+                            }
+                        }
+                        break;
+
+                    case 'toggle-video-fullscreen':
+                    case 'video-fullscreen':
+                        {
+                            const video = document.querySelector('video');
+                            if (video) {
+                                if (document.fullscreenElement) {
+                                    document.exitFullscreen();
+                                } else {
+                                    video.requestFullscreen();
+                                }
+                            }
+                        }
+                        break;
+
+                    case 'video-previous-frame':
+                    case 'video-next-frame':
+                        {
+                            const video = document.querySelector('video');
+                            if (video) {
+                                const delta = action.includes('previous') ? -1 / 30 : 1 / 30;
+                                video.currentTime += delta;
+                            }
+                        }
+                        break;
+
+                    case 'save-video-as':
+                        if (data?.src) {
+                            window.electronAPI?.downloads?.saveVideo?.(data.src);
+                        }
+                        break;
+
+                    case 'save-audio-as':
+                        if (data?.src) {
+                            window.electronAPI?.downloads?.saveAudio?.(data.src);
+                        }
+                        break;
+
+                    // === SEARCH/TRANSLATE ===
+                    case 'search-google':
+                        if (data?.text) {
+                            addNewTab(`https://www.google.com/search?q=${encodeURIComponent(data.text)}`, { pane: 'left' });
+                        }
+                        break;
+
+                    case 'translate':
+                        if (data?.text) {
+                            window.electronAPI?.dictionary?.translate?.(data?.text, 'es');
+                        }
+                        break;
+
+                    case 'define':
+                        if (data?.text) {
+                            window.electronAPI?.dictionary?.define?.(data?.text);
+                        }
+                        break;
+
+                    case 'read-aloud':
+                        if (data?.text && 'speechSynthesis' in window) {
+                            const utterance = new SpeechSynthesisUtterance(data.text);
+                            speechSynthesis.speak(utterance);
+                        }
+                        break;
+
+                    // === SHARE ===
+                    case 'share':
+                        window.electronAPI?.share?.share?.(data);
+                        break;
+
+                    // === TABS ===
+                    case 'new-tab':
+                        addNewTab(data?.url || 'https://www.google.com', { pane: data?.pane || getActionPane() });
+                        break;
+
+                    case 'reload-tab':
+                        {
+                            const tabToReload = tabs.find(t => t.id === data?.tabId);
+                            if (tabToReload?.webview) tabToReload.webview.reload();
+                        }
+                        break;
+
+                    case 'duplicate-tab':
+                        {
+                            const tabToDup = tabs.find(t => t.id === data?.tabId);
+                            if (tabToDup?.url) addNewTab(tabToDup.url, { pane: getActionPane() });
+                        }
+                        break;
+
+                    case 'close-tab':
+                        if (data?.tabId) {
+                            window.dispatchEvent(new CustomEvent('close-tab', { detail: { tabId: data.tabId } }));
+                        }
+                        break;
+
+                    case 'close-other-tabs':
+                        {
+                            const currentTabId = data?.tabId;
+                            tabs.filter(t => t.id !== currentTabId).forEach(t => {
+                                window.dispatchEvent(new CustomEvent('close-tab', { detail: { tabId: t.id } }));
+                            });
+                        }
+                        break;
+
+                    case 'close-tabs-left':
+                        {
+                            const leftIdx = data?.tabIndex;
+                            tabs.slice(0, leftIdx).forEach(t => {
+                                window.dispatchEvent(new CustomEvent('close-tab', { detail: { tabId: t.id } }));
+                            });
+                        }
+                        break;
+
+                    case 'close-tabs-right':
+                        {
+                            const rightIdx = data?.tabIndex;
+                            tabs.slice(rightIdx + 1).forEach(t => {
+                                window.dispatchEvent(new CustomEvent('close-tab', { detail: { tabId: t.id } }));
+                            });
+                        }
+                        break;
+
+                    case 'reopen-closed-tab':
+                        window.electronAPI?.history?.popClosedTab?.();
+                        break;
+
+                    case 'copy-tab-url':
+                        if (data?.url) {
+                            navigator.clipboard.writeText(data.url);
+                        }
+                        break;
+
+                    case 'copy-tab-title':
+                        if (data?.title) {
+                            navigator.clipboard.writeText(data.title);
+                        }
+                        break;
+
+                    case 'bookmark-tab':
+                    case 'bookmark-page':
+                        window.electronAPI?.bookmarks?.add?.(data?.url, data?.title)
+                            .then(() => {
+                                notifyBookmarksUpdated();
+                            });
+                        break;
+
+                    // === DEVTOOLS ===
+                    case 'inspect':
+                    case 'inspect-element':
+                        {
+                            const wv = getActiveWebview();
+                            if (wv?.openDevTools) {
+                                wv.openDevTools();
+                            }
+                        }
+                        break;
+
+                    case 'open-devtools':
+                    case 'view-console':
+                        window.electronAPI?.devTools?.openConsole?.();
+                        break;
+
+                    case 'view-source':
+                    case 'view-frame-source':
+                        window.electronAPI?.devTools?.viewSource?.(data?.url);
+                        break;
+
+                    // === DOWNLOADS ===
+                    case 'download-file':
+                    case 'download':
+                    case 'download-video':
+                    case 'download-audio':
+                    case 'download-link':
+                        window.electronAPI?.downloads?.downloadFile?.(data?.src || data?.url);
+                        break;
+
+                    // === PASSWORD ===
+                    case 'toggle-password-visibility':
+                        {
+                            const activeEl = document.activeElement;
+                            if (activeEl?.tagName === 'INPUT') {
+                                activeEl.type = activeEl.type === 'password' ? 'text' : 'password';
+                            }
+                        }
+                        break;
+
+                    case 'generate-password':
+                        window.electronAPI?.passwords?.generate?.().then(pwd => {
+                            if (pwd) navigator.clipboard.writeText(pwd);
+                        });
+                        break;
+
+                    // === PAGE ===
+                    case 'save-page-as':
+                        window.electronAPI?.downloads?.showSaveDialog?.('page.html', [{ name: 'HTML', extensions: ['html', 'htm'] }]);
+                        break;
+
+                    case 'print':
+                        window.print();
+                        break;
+
+                    case 'open-in-browser':
+                        window.electronAPI?.shell?.openExternal?.(data?.url);
+                        break;
+
+                    default:
+                        console.log('Unhandled context menu action:', action, data);
+                }
+            } catch (error) {
+                console.error('Error handling context menu action:', action, error);
+            }
+        };
+
+        const showContextMenu = async (e, webview = null) => {
+            e.preventDefault();
+
+            const context = webview ?
+                { type: 'navigation', data: {} } :
+                detectContextMenu(e);
+
+            // Get webview navigation state if applicable
+            if (webview || context.type === 'navigation') {
+                const activeWv = webview || getActiveWebview();
+                if (activeWv) {
+                    context.data = {
+                        ...context.data,
+                        canGoBack: activeWv.canGoBack ? activeWv.canGoBack() : false,
+                        canGoForward: activeWv.canGoForward ? activeWv.canGoForward() : false,
+                        url: activeWv.src || ''
+                    };
+                }
+            }
+
+            try {
+                await window.electronAPI?.contextMenu?.show({
+                    type: context.type,
+                    data: context.data,
+                    x: e.clientX,
+                    y: e.clientY
+                });
+            } catch (err) {
+                console.error('Context menu failed:', err);
+            }
+        };
+
+        // Context menu on webviews
+        document.addEventListener('contextmenu', (e) => {
+            const target = e.target;
+
+            // Check if inside a webview container or webview element
+            const webviewContainer = target.closest('.webview-container');
+            const webviewEl = target.tagName === 'WEBVIEW' ? target : null;
+
+            if (webviewEl || webviewContainer) {
+                showContextMenu(e, webviewEl);
+                return;
+            }
+
+            // Check if in tab bar area
+            const tabEl = target.closest('[data-tab-id]');
+            if (tabEl) {
+                e.preventDefault();
+                const tabId = tabEl.dataset.tabId;
+                const tabIndex = tabs.findIndex(t => t.id === tabId);
+
+                window.electronAPI?.contextMenu?.show({
+                    type: 'tab',
+                    data: { tabId, index: tabIndex, tabCount: tabs.length },
+                    x: e.clientX,
+                    y: e.clientY
+                });
+                return;
+            }
+
+            // Default context menu for other elements
+            showContextMenu(e);
+        });
+
+        // Handle context menu on dynamically created webviews
+        const originalAddNewTab = window.addNewTab;
+        if (typeof originalAddNewTab === 'function') {
+            window.addNewTab = function (...args) {
+                const result = originalAddNewTab.apply(this, args);
+                // Context menu handler will be attached when webview is created
+                return result;
+            };
+        }
+
+        // Attach context menu to existing webviews
+        document.querySelectorAll('webview').forEach(wv => {
+            wv.addEventListener('context-menu', (e) => {
+                e.preventDefault();
+
+                const context = {
+                    type: 'navigation',
+                    data: {
+                        canGoBack: wv.canGoBack ? wv.canGoBack() : false,
+                        canGoForward: wv.canGoForward ? wv.canGoForward() : false,
+                        url: wv.src || ''
+                    }
+                };
+
+                // Override with specific context if available
+                if (e.params) {
+                    if (e.params.linkURL) {
+                        context.type = 'link';
+                        context.data = {
+                            url: e.params.linkURL,
+                            text: e.params.linkText || e.params.linkURL,
+                            canGoBack: context.data.canGoBack,
+                            canGoForward: context.data.canGoForward
+                        };
+                    } else if (e.params.srcURL && e.params.mediaType === 'image') {
+                        context.type = 'image';
+                        context.data = {
+                            src: e.params.srcURL,
+                            alt: e.params.altText || '',
+                            canGoBack: context.data.canGoBack,
+                            canGoForward: context.data.canGoForward
+                        };
+                    } else if (e.params.selectionText) {
+                        context.type = 'text';
+                        context.data = {
+                            selectedText: e.params.selectionText,
+                            canGoBack: context.data.canGoBack,
+                            canGoForward: context.data.canGoForward
+                        };
+                    } else if (e.params.isEditable) {
+                        context.type = 'input';
+                        context.data = {
+                            isEditable: true,
+                            hasSelection: !!e.params.selectionText,
+                            canGoBack: context.data.canGoBack,
+                            canGoForward: context.data.canGoForward
+                        };
+                    }
+                }
+
+                window.electronAPI.contextMenu.show({
+                    type: context.type,
+                    data: context.data,
+                    x: e.params ? e.params.x : 0,
+                    y: e.params ? e.params.y : 0
+                }).catch(err => console.error('Context menu error:', err));
+            });
+        });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+    </div>
+</body>
+
+</html>

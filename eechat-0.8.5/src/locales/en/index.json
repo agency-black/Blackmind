@@ -1,0 +1,535 @@
+{
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "timeGroup": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "within7days": "Last 7 days",
+      "within30days": "Last 30 days",
+      "monthFormat": "MMMM",
+      "yearMonthFormat": "MMMM YYYY"
+    }
+  },
+  "chat": {
+    "scrollToBottom": "Scroll to Bottom",
+    "newChat": "Chat",
+    "send": "Send",
+    "typing": "Typing...",
+    "thinking": "Thinking...",
+    "clearConversation": "Clear Conversation",
+    "exportConversation": "Export Conversation",
+    "inputPlaceholder": "Type a message, press Enter to send, Shift + Enter for new line",
+    "settings": {
+      "title": "Settings",
+      "chatName": "Chat Name",
+      "systemPrompt": "System Prompt",
+      "rolePrompt": "Role Setting",
+      "creativity": "Creativity",
+      "openness": "Openness",
+      "expressiveness": "Expressiveness",
+      "vocabulary": "Vocabulary",
+      "saveSettings": "Save Settings",
+      "saveSuccess": "Save Success"
+    },
+    "sidebar": {
+      "chat": "Chat",
+      "confirmDelete": "Confirm Delete Chat?",
+      "confirmDeleteDesc": "This action will delete the chat \"{title}\", this cannot be undone.",
+      "deleting": "Deleting...",
+      "confirmDeleteBtn": "Confirm Delete",
+      "newChat": "New Chat",
+      "deleteSuccess": "Delete Success",
+      "deleteSuccessDesc": "Chat \"{title}\" has been deleted",
+      "deleteFailed": "Delete Failed",
+      "unknownError": "Unknown Error"
+    },
+    "promptEditor": {
+      "title": "Edit Prompt",
+      "placeholder": "Enter your prompt here..."
+    },
+    "discover": {
+      "title": "Discover"
+    },
+    "mcp": {
+      "title": "MCP"
+    }
+  },
+  "mcp": {
+    "title": "MCP Management",
+    "subtitle": "Manage and install MCP applications to enhance AI assistant capabilities",
+    "installedApps": "Installed Applications",
+    "recommendedApps": "Recommended Applications",
+    "addNewApp": "Add New Application",
+    "refresh": "Refresh",
+    "viewMore": "View More",
+    "helpDoc": "Help Documentation",
+    "noInstalledApps": "No MCP applications installed yet, please click \"Add New Application\" to add one",
+    "loadingApps": "Loading MCP application list...",
+    "status": {
+      "running": "Running",
+      "stopped": "Stopped"
+    },
+    "actions": {
+      "start": "Start Service",
+      "stop": "Stop Service",
+      "edit": "Edit Configuration",
+      "delete": "Delete",
+      "install": "Install this application"
+    },
+    "messages": {
+      "refreshSuccess": "Refresh Successful",
+      "refreshSuccessDesc": "MCP server list has been updated",
+      "refreshFailed": "Refresh Failed",
+      "startSuccess": "Start Successful",
+      "startSuccessDesc": "Started {name}",
+      "startFailed": "Start Failed",
+      "stopSuccess": "Stop Successful",
+      "stopSuccessDesc": "Stopped {name}",
+      "stopFailed": "Stop Failed",
+      "deleteSuccess": "Delete Successful",
+      "deleteSuccessDesc": "Deleted {name}",
+      "deleteFailed": "Delete Failed",
+      "unknownError": "Unknown Error"
+    },
+    "dialog": {
+      "confirmDelete": "Confirm Delete",
+      "confirmDeleteDesc": "Are you sure you want to delete {name}? This action cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "addNew": {
+      "title": {
+        "add": "Add New MCP Application",
+        "edit": "Edit MCP Application"
+      },
+      "form": {
+        "serverKey": "Server Key",
+        "serverKeyPlaceholder": "e.g.: filesystem, fetch",
+        "transportType": "Transport Type",
+        "transportTypePlaceholder": "Select transport type",
+        "command": "Command",
+        "commandPlaceholder": "e.g.: npx, node, uvx",
+        "args": "Arguments",
+        "argsPlaceholder": "One argument per line\ne.g.:\n-y\n{'@'}modelcontextprotocol/server-filesystem\nC:/Users/Documents",
+        "argsHelp": "Enter one argument per line, no comma separation needed",
+        "env": "Environment Variables",
+        "envPlaceholder": "One environment variable per line, format: KEY=VALUE\ne.g.:\nNODE_ENV=production\nDEBUG=true",
+        "envHelp": "One environment variable per line, format: KEY=VALUE",
+        "url": "URL",
+        "urlPlaceholder": "e.g.: https://mcp.example.com/sse",
+        "headers": "Headers",
+        "headersPlaceholder": "One header per line, format: KEY: VALUE\ne.g.:\nAuthorization: Bearer token123\nContent-Type: application/json",
+        "headersHelp": "One header per line, format: KEY: VALUE",
+        "enabled": "Enabled",
+        "enabledStatus": {
+          "enabled": "Enabled",
+          "disabled": "Disabled"
+        }
+      },
+      "transportTypes": {
+        "stdio": "Standard Input/Output (stdio)",
+        "sse": "Server-Sent Events (SSE)"
+      },
+      "readme": {
+        "urlPlaceholder": "https://github.com/repo/project/README.md",
+        "fetch": "Fetch",
+        "fetching": "Fetching...",
+        "newMcpService": "New MCP"
+      },
+      "buttons": {
+        "autoFill": "AI Auto Fill (Beta)",
+        "cancel": "Cancel",
+        "add": "Add",
+        "update": "Update",
+        "testConnection": "Test Connection"
+      },
+      "validation": {
+        "serverKeyRequired": "Server key cannot be empty",
+        "commandRequired": "Command cannot be empty",
+        "urlRequired": "URL cannot be empty",
+        "urlEmpty": "URL cannot be empty",
+        "urlEmptyDesc": "Please enter a valid README URL"
+      },
+      "messages": {
+        "aiAnalyzing": "AI Analyzing",
+        "aiAnalyzingDesc": "Analyzing MCP information and auto-filling form...",
+        "fillComplete": "Fill Complete",
+        "fillCompleteDesc": "AI has completed form auto-fill, please review and modify",
+        "fetchSuccess": "Fetch Successful",
+        "fetchSuccessDesc": "README content has been successfully fetched",
+        "fetchFailed": "Fetch Failed",
+        "fetchFailedDesc": "Unable to fetch README content, please check if URL is correct",
+        "validationFailed": "Validation Failed",
+        "addSuccess": "Add Successful",
+        "addSuccessDesc": "MCP service {serverKey} has been added",
+        "addFailed": "Add Failed",
+        "updateSuccess": "Update Successful",
+        "updateSuccessDesc": "MCP service {serverKey} has been updated",
+        "updateFailed": "Update Failed",
+        "unknownError": "Unknown Error"
+      }
+    },
+    "config": {
+      "title": "MCP Configuration File",
+      "button": "Config File",
+      "loading": "Loading...",
+      "filePath": "Configuration File Path",
+      "buttons": {
+        "openDirectory": "Open Directory",
+        "reset": "Reset",
+        "format": "Format",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "messages": {
+        "pathFailed": "Path Retrieval Failed",
+        "pathFailedDesc": "Unable to get configuration file path",
+        "loadFailed": "Load Failed",
+        "loadFailedDesc": "Unable to load MCP configuration file",
+        "formatError": "Format Error",
+        "formatErrorDesc": "JSON format is incorrect, unable to format",
+        "formatErrorSave": "JSON format is incorrect, please check and try again",
+        "saveSuccess": "Save successful, restarting service",
+        "saveSuccessDesc": "MCP configuration file has been updated",
+        "restartSuccess": "Service restart successful",
+        "restartFailed": "Service restart failed",
+        "saveFailed": "Save Failed",
+        "saveFailedDesc": "Unable to save MCP configuration file",
+        "unknownError": "Unknown Error"
+      }
+    },
+    "env": {
+      "title": "Runtime Environment",
+      "dialogTitle": "Runtime Environment Detection",
+      "status": {
+        "installed": "Installed",
+        "notInstalled": "Not Installed"
+      },
+      "actions": {
+        "download": "Download",
+        "downloading": "Downloading...",
+        "openDirectory": "Open Directory"
+      },
+      "tools": {
+        "bun": {
+          "description": "JavaScript runtime and toolchain for executing Node.js related tasks"
+        },
+        "uv": {
+          "description": "Python package manager and virtual environment tool for executing Python related tasks"
+        }
+      },
+      "installDirectory": "Install Directory:",
+      "manualInstallTip": "Tip: You can manually download uninstalled tools ({tools}) and place them in the above directory"
+    }
+  },
+  "rag": {
+    "title": "Knowledge Base",
+    "sidebar": {
+      "title": "RAG",
+      "create": "New",
+      "knowledgeBases": "Knowledge Bases",
+      "noKnowledgeBases": "No Knowledge Bases",
+      "description": "Description",
+      "isDefault": "Default Knowledge Base",
+      "createBaseDesc": "Create a new knowledge base",
+      "documents": "Documents",
+      "edit": "Edit",
+      "delete": "Delete",
+      "setDefault": "Set as Default",
+      "chunkMethod": "Chunking Method",
+      "selectChunkMethod": "Select Chunking Method",
+      "chunkSize": "Chunk Size",
+      "chunkSizeDesc": "Larger chunk size produces more accurate vectors but consumes more resources",
+      "chunkOverlap": "Chunk Overlap",
+      "chunkOverlapDesc": "Greater chunk overlap produces more accurate vectors but consumes more resources",
+      "embeddingModel": "Embedding Model",
+      "embeddingModelType": "Model Type",
+      "selectEmbeddingModel": "Select Embedding Model",
+      "selectEmbeddingModelType": "Select Model Type",
+      "embeddingModelDesc": "Embedding models convert text into vectors",
+      "embeddingDimension": "Embedding Dimension",
+      "selectEmbeddingDimension": "Select Embedding Dimension",
+      "embeddingDimensionDesc": "Higher dimensions produce more accurate vectors but consume more resources",
+      "textUnderstandingModel": "Text Understanding Model",
+      "selectTextModel": "Select Text Model",
+      "imageUnderstandingModel": "Image Understanding Model",
+      "selectImageModel": "Select Image Model",
+      "rerankEnabled": "Enable Reranking",
+      "selectRerankModel": "Select Reranking Model",
+      "rerankModel": "Reranking Model",
+      "rerankModelDesc": "Reranking models sort search results",
+      "moreConfig": "More Configuration"
+    },
+    "document": {
+      "name": "Document Name",
+      "dataCount": "Data Count",
+      "status": "Status",
+      "statusReady": "Ready",
+      "statusIndexing": "Processing",
+      "statusFailed": "Failed",
+      "statusPending": "Pending",
+      "statusUnknown": "Unknown",
+      "enabled": "Enabled",
+      "createdAt": "Created At",
+      "actions": "Actions",
+      "documentList": "Document List",
+      "modelConfig": "Model Configuration",
+      "help": "Help Documentation",
+      "unsupportedFileType": "Unsupported File Type",
+      "unsupportedFileTypeDesc": "Please upload documents of the following file types: {fileTypes}",
+      "dragAndDrop": "Drag and Drop Files or Folders",
+      "supportedFormats": "Supported File Formats",
+      "noBaseSelected": "Please select a knowledge base first",
+      "pleaseSelectBase": "Please select a knowledge base first",
+      "uploadSuccess": "Upload Successful",
+      "uploadSuccessDesc": "{count} data items successfully uploaded",
+      "uploadFailed": "Upload Failed",
+      "uploadFailedDesc": "{count} data items failed to upload",
+      "uploadDocument": "Upload Document",
+      "uploadDocumentDesc": "After uploading, the system will automatically convert documents into vectors and store them in the database",
+      "browseFiles": "Browse Files",
+      "upload": "Upload",
+      "uploading": "Uploading...",
+      "uploadingDesc": "Uploading documents, please wait",
+      "chunks": "Document Chunks",
+      "chunksDesc": "View all segments the document has been divided into",
+      "chunkIndex": "Chunk Index",
+      "metadata": "Metadata",
+      "noChunks": "This document has no chunk data",
+      "fetchChunksFailed": "Failed to fetch chunks",
+      "chunksEmpty": "Chunk data is empty",
+      "chunksEmptyDesc": "This document may not have finished processing"
+    }
+  },
+  "discover": {
+    "title": "Discover",
+    "searchPlaceholder": "Enter content to search...",
+    "mine": "Mine",
+    "assistant": "Assistant",
+    "pageTitle": "Explore Premium AI Agents",
+    "pageDescription": "Use these template applications, or customize your own based on the templates.",
+    "categories": {
+      "translation": "Translation",
+      "all": "All",
+      "academic": "Academic",
+      "copywriting": "Copywriting",
+      "design": "Design",
+      "commercial": "Commercial",
+      "programming": "Programming",
+      "technology": "Technology",
+      "music": "Music",
+      "openSource": "Open Source",
+      "financial": "Financial",
+      "medical": "Medical",
+      "legal": "Legal",
+      "education": "Education",
+      "entertainment": "Entertainment",
+      "government": "Government",
+      "other": "Other"
+    },
+    "assistants": {
+      "frenchTranslator": {
+        "title": "French Translation Assistant",
+        "description": "Friendly, professional and empathetic French translation AI assistant",
+        "type": "Translation",
+        "tags": ["Translation", "Humor", "Culture"]
+      },
+      "codeHelper": {
+        "title": "Code Assistant",
+        "description": "Professional programming assistant proficient in multiple programming languages and frameworks",
+        "type": "Programming",
+        "tags": ["Programming", "Debugging", "Explanation"]
+      },
+      "englishWriting": {
+        "title": "English Writing Coach",
+        "description": "Provides professional English writing guidance and revision suggestions",
+        "type": "Education",
+        "tags": ["Writing", "English", "Education"]
+      },
+      "mentalHealth": {
+        "title": "Mental Health Counselor",
+        "description": "AI assistant providing emotional support and mental health advice",
+        "type": "Health",
+        "tags": ["Mental", "Emotional", "Health"]
+      },
+      "creativeWriting": {
+        "title": "Creative Writing Assistant",
+        "description": "Sparks inspiration, assists in creating novels, poetry and various creative content",
+        "type": "Writing",
+        "tags": ["Creative", "Writing", "Inspiration"]
+      },
+      "dataAnalysis": {
+        "title": "Data Analysis Expert",
+        "description": "Professional assistant for data analysis, statistics and visualization",
+        "type": "Data",
+        "tags": ["Data", "Analysis", "Statistics"]
+      },
+      "travelPlanner": {
+        "title": "Travel Planner",
+        "description": "Helps plan travel routes, recommend attractions and provide travel advice",
+        "type": "Lifestyle",
+        "tags": ["Travel", "Planning", "Advice"]
+      },
+      "dietitian": {
+        "title": "Health Diet Advisor",
+        "description": "Provides balanced dietary advice and healthy recipes",
+        "type": "Health",
+        "tags": ["Diet", "Health", "Nutrition"]
+      },
+      "japaneseCoach": {
+        "title": "Japanese Learning Coach",
+        "description": "Professional Japanese learning guidance and practice partner",
+        "type": "Education",
+        "tags": ["Japanese", "Learning", "Language"]
+      }
+    }
+  },
+  "settings": {
+    "modelFilter": {
+      "popular": "Popular",
+      "installed": "Installed",
+      "searchPlaceholder": "deepseek..."
+    },
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "apiSettings": "API Settings",
+    "modelSettings": "Model Settings",
+    "configureInterface": "Configure your interface",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "modelSelect": {
+      "selectModel": "Select Model",
+      "noLocalModel": "No local model found",
+      "configureModel": "Configure",
+      "clickToConfig": "Click to configure model",
+      "localModel": "Local Model"
+    },
+    "apiModel": {
+      "modelProvider": "Provider",
+      "connectionSuccess": "Connection Successful",
+      "connectionSuccessDesc": "Successfully connected to API",
+      "connectionFailed": "Connection Failed",
+      "testConnection": "Test Connection",
+      "testing": "Testing...",
+      "enableProvider": "Enable this provider in chat",
+      "modelConfig": "Model Configuration",
+      "apiKey": "API Key",
+      "apiUrl": "API URL",
+      "connectivityCheck": "Connectivity Check",
+      "selectModelToTest": "Select a model to test connectivity",
+      "availableModels": "Available Models",
+      "enableModel": "Enable this model in chat"
+    },
+    "localModel": {
+      "serviceNotResponding": "Service Not Responding",
+      "serviceRunningNormal": "Local Service Running Normal",
+      "installModelManager": "Install Model Manager",
+      "startModelManager": "Start Model Manager",
+      "stopModelManager": "Stop Model Manager",
+      "refreshStatus": "Refresh Status",
+      "modelManagement": "Model Management",
+      "moreModels": "More Models?",
+      "installed": "Installed",
+      "confirmDeleteDesc": "This action will delete the model {model}, you'll need to download it again to use it.",
+      "deleting": "Deleting...",
+      "confirmDelete": "Confirm Delete",
+      "downloadOllama": "Download and Install Ollama",
+      "downloadOllamaDesc": "Click confirm to open browser and download Ollama. Please restart the software after installation to check the installation status.",
+      "downloadNow": "Download Now",
+      "installSuccess": "{model} Installation Successful",
+      "installSuccessDesc": "Model has been installed successfully. You can start using it now.",
+      "serviceNotRunning": "Model Manager Not Running",
+      "serviceNotInstalled": "Model Manager Not Installed",
+      "syncModel": "Synchronize ollama models",
+      "syncModelSuccess": "Model Synchronization Successful",
+      "syncModelSuccessDesc": "Model has been synchronized successfully. You can start using it now.",
+      "syncModelFailed": "Model Synchronization Failed",
+      "syncModelFailedDesc": "Model synchronization failed. Please check your network connection."
+    },
+    "sidebar": {
+      "models": "Models",
+      "localModel": "Local Model",
+      "apiModel": "API Model",
+      "general": "General",
+      "interface": "Interface",
+      "about": "About",
+      "data": "Data",
+      "proxy": "Proxy Settings",
+      "playground": "Playground",
+      "voice": "Voice",
+      "tts": "Text to speech"
+    },
+    "tts": {
+      "title": "Text to Speech settings",
+      "voice": "Voice",
+      "refresh": "Refresh",
+      "currentLanguageVoices": "Current Language Voices",
+      "selectVoice": "Select Voice",
+      "testTextTitle": "Test Text",
+      "testText": "eechat is great, i like it!"
+    },
+    "proxy": {
+      "title": "Proxy Settings",
+      "enableProxy": "Enable Proxy",
+      "enableProxyDesc": "When enabled, the application will connect to the network through a proxy server",
+      "httpProxy": "HTTP Proxy",
+      "httpsProxy": "HTTPS Proxy",
+      "socksAddress": "Socks Address",
+      "socksPort": "Socks Port",
+      "portPlaceholder": "e.g. 7890",
+      "socksUsername": "Username (optional)",
+      "socksPassword": "Password (optional)",
+      "usernamePlaceholder": "If proxy requires authentication, please fill in",
+      "passwordPlaceholder": "If proxy requires authentication, please fill in",
+      "proxyPlaceholder": "e.g. 127.0.0.1",
+      "getConfigFailed": "Failed to get proxy configuration",
+      "updateSuccess": "Proxy configuration updated",
+      "updateSuccessDesc": "Proxy configuration has been successfully updated",
+      "updateFailed": "Failed to update proxy configuration",
+      "enableSuccess": "Proxy enabled",
+      "enableSuccessDesc": "Proxy has been successfully enabled",
+      "enableFailed": "Failed to enable proxy",
+      "disableSuccess": "Proxy disabled",
+      "disableSuccessDesc": "Proxy has been successfully disabled",
+      "disableFailed": "Failed to disable proxy"
+    },
+    "models": {
+      "localModel": "Local Model",
+      "apiModel": "API Model Configuration"
+    },
+    "data": {
+      "title": "Data Management",
+      "config": {
+        "title": "Data Configuration",
+        "description": "Configure system files"
+      },
+      "database": {
+        "title": "Database",
+        "description": "You can backup/restore chat content through this directory"
+      },
+      "executable": {
+        "title": "Executable Files",
+        "description": "For runtime environments like bun/uv, manually add to this directory if download fails"
+      },
+      "logs": {
+        "title": "System Logs",
+        "description": "Record system running logs"
+      },
+      "openDirectory": "Open"
+    },
+    "about": {
+      "description": "A simple and easy-to-use, locally deployed LLM tool.",
+      "star": "Star",
+      "accelerate": "Accelerate development"
+    }
+  }
+}

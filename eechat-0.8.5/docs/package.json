@@ -1,0 +1,13 @@
+{
+  "name": "eechat-docs",
+  "homepage": "https://ee.chat/",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "dependencies": {
+    "vitepress": "^1.6.3"
+  }
+}

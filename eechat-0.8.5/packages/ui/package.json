@@ -1,0 +1,36 @@
+{
+  "name": "@repo/ui",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "clean": "rimraf dist",
+    "add:component": "shadcn-vue add"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@vueuse/core": "^10.7.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "lucide-vue-next": "^0.294.0",
+    "radix-vue": "^1.2.5",
+    "tailwind-merge": "^2.1.0",
+    "tailwindcss-animate": "^1.0.7",
+    "vue": "^3.3.10"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.4",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "rimraf": "^5.0.5",
+    "shadcn-vue": "^0.1.4",
+    "tailwindcss": "^3.4.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  }
+}

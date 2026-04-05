@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Release Files
+        run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release_on_${{ matrix. os }}
+          path: release/
+          retention-days: 5
+
+  release:
+      name: 发布 Release
+      needs: build
+      runs-on: ubuntu-latest
+      permissions:
+        contents: write
+      steps:
+        - name: 检出代码
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+
+        - name: 获取版本号
+          id: get_version
+          run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          shell: bash
+
+        - name: 下载所有构建产物
+          uses: actions/download-artifact@v4
+          with:
+            path: artifacts
+            # merge-multiple: true
+
+        - name: 显示下载的文件
+          run: ls -R artifacts
+          shell: bash
+
+        - name: 准备发布文件
+          run: |
+            mkdir -p release_files
+            # 复制所有安装包文件到发布目录
+            find artifacts -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.zip" -o -name "*.deb" -o -name "*.rpm" -o -name "latest*.yml" | xargs -I {} cp {} release_files/
+            ls -la release_files/
+          shell: bash
+
+        - name: 创建 Release
+          uses: softprops/action-gh-release@v1
+          with:
+            name: eechat ${{ steps.get_version.outputs.VERSION }}
+            draft: false
+            prerelease: false
+            files: release_files/*
+            generate_release_notes: true
+            body: |
+              ### Changes  
+              ${{ github.event.head_commit.message }}
+                
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

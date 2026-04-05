@@ -1,0 +1,37 @@
+eechat - A lightweight chat tool for LLM  
+Copyright (c) 2024 9tharts <lucas@9tharts.com>  
+All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");  
+you may not use this file except in compliance with the License.  
+You may obtain a copy of the License at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software  
+distributed under the License is distributed on an "AS IS" BASIS,  
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
+See the License for the specific language governing permissions and  
+limitations under the License.
+
+------------------------------
+ADDITIONAL TERMS APPLY:
+
+- Commercial use is permitted.
+- You may not modify or remove the original logo or the name “eechat”.
+- If used as a SaaS platform with more than 10 tenants, authorization is required.
+- The license terms may be adjusted in the future to be more strict or more relaxed.
+- Contributors agree that their code may be used in commercial versions (e.g., cloud/SaaS editions).
+- Contact: lucas@9tharts.com for licensing.
+
+附加条款：
+
+- 允许商业使用。
+- 不得修改或移除原始 Logo 或 “eechat” 名称。
+- 若作为租户服务使用，且租户数量超过 10 个，需取得授权。
+- 官方保留未来根据需要，调整许可协议（更严格或更宽松）的权利。
+- 所有代码贡献者须同意，其贡献代码可能被用于商业用途（例如云端或 SaaS 版本）。
+- 授权请联系：lucas@9tharts.com
+
+For full license terms including additional conditions, see:  
+https://www.apache.org/licenses/LICENSE-2.0

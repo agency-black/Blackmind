@@ -1,0 +1,48 @@
+{
+  "name": "@repo/rag",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "dotenv -e .env.local tsup src/index.ts --format cjs,esm --dts --watch",
+    "dev:run": "dotenv -e .env.local -- node dist/index.js",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "clean": "rimraf dist",
+    "test": "dotenv -e .env.local -- jest"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@langchain/community": "^0.3.44",
+    "@langchain/core": "^0.3.57",
+    "@langchain/deepseek": "^0.0.1",
+    "@langchain/langgraph": "^0.2.73",
+    "@langchain/ollama": "^0.2.0",
+    "@langchain/openai": "^0.5.11",
+    "@repo/typescript-config": "workspace:*",
+    "chroma": "link:@langchain/community/vectorstores/chroma",
+    "langchain": "^0.3.27"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "dotenv-cli": "^8.0.0",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.5",
+    "ts-jest": "^29.3.4",
+    "tsup": "^8.0.1",
+    "typescript": "^5.2.2"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    }
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

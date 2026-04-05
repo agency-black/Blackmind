@@ -1,0 +1,28 @@
+{
+  "milvus": {
+    "host": "localhost",
+    "port": 19530,
+    "username": "",
+    "password": ""
+  },
+  "embedding": {
+    "model": "text-embedding-v3",
+    "dimension": 1024,
+    "baseURL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "apiKey": "sk-d74fcc93c1c147b49b0132f309a8475f"
+  },
+  "chunking": {
+    "defaultSize": 1000,
+    "defaultOverlap": 200
+  },
+  "collections": {
+    "default": {
+      "name": "documents",
+      "description": "默认文档集合"
+    }
+  },
+  "rerank": {
+    "enabled": true,
+    "model": "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  }
+}

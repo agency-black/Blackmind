@@ -1,0 +1,61 @@
+{
+  "name": "eechat-server",
+  "version": "1.0.0",
+  "description": "eechat server",
+  "author": "lucas(lucas@9tharts.com)",
+  "private": true,
+  "egg": {
+    "declarations": true
+  },
+  "dependencies": {
+    "csv-parser": "^3.2.0",
+    "egg": "^3.17.5",
+    "egg-cors": "^3.0.1",
+    "egg-scripts": "2",
+    "egg-sequelize": "^6.0.0",
+    "marked": "^15.0.12",
+    "socks-proxy-agent": "^8.0.5",
+    "sqlite3": "5.1.6",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "egg-bin": "6",
+    "egg-mock": "5",
+    "eslint": "8",
+    "eslint-config-egg": "13",
+    "pkg": "^5.8.1",
+    "pkg-fetch": "^3.5.2",
+    "sequelize-cli": "^6.6.2"
+  },
+  "scripts": {
+    "start": "egg-scripts start --daemon --title=egg-server-server",
+    "stop": "egg-scripts stop --title=egg-server-server",
+    "dev": "egg-bin dev",
+    "eggdev": "egg-bin dev",
+    "egg": "egg-bin dev",
+    "debug": "egg-bin debug",
+    "test": "npm run lint -- --fix && npm run test:local",
+    "test:local": "egg-bin test",
+    "cov": "egg-bin cov",
+    "lint": "eslint .",
+    "ci": "npm run lint && npm run cov",
+    "migrate:up": "sequelize db:migrate",
+    "migrate:down": "sequelize db:migrate:undo",
+    "migrate:undo": "sequelize db:migrate:undo",
+    "migrate:undo:all": "sequelize db:migrate:undo:all",
+    "pkg": "pkg . --targets node18-macos-x64 --output dist/server"
+  },
+  "bin": "index.js",
+  "pkg": {
+    "scripts": [
+      "app/**/*.js",
+      "config/**/*.js",
+      "lib/**/*.js"
+    ],
+    "assets": [
+      "app/**/*",
+      "config/**/*",
+      "database/**/*"
+    ]
+  }
+}

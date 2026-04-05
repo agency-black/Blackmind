@@ -1,0 +1,536 @@
+{
+  "common": {
+    "ok": "确定",
+    "cancel": "取消",
+    "save": "保存",
+    "create": "创建",
+    "delete": "删除",
+    "edit": "编辑",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "close": "关闭",
+    "timeGroup": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "within7days": "7天内",
+      "within30days": "30天内",
+      "monthFormat": "M月",
+      "yearMonthFormat": "YYYY年M月"
+    }
+  },
+  "chat": {
+    "scrollToBottom": "滚动到底部",
+    "newChat": "新对话",
+    "send": "发送",
+    "typing": "正在输入...",
+    "thinking": "思考中...",
+    "clearConversation": "清空对话",
+    "exportConversation": "导出对话",
+    "inputPlaceholder": "输入消息，使用 Enter 发送, Shift + Enter 换行",
+    "settings": {
+      "title": "设置",
+      "chatName": "对话名称",
+      "systemPrompt": "系统提示",
+      "rolePrompt": "角色设定",
+      "creativity": "创意活跃度",
+      "openness": "思维开放度",
+      "expressiveness": "表述发散度",
+      "vocabulary": "词汇丰富度",
+      "saveSettings": "保存设置",
+      "saveSuccess": "保存成功"
+    },
+    "sidebar": {
+      "chat": "对话",
+      "confirmDelete": "确认删除会话?",
+      "confirmDeleteDesc": "此操作将删除会话 \"{title}\"，删除后无法恢复。",
+      "deleting": "删除中...",
+      "confirmDeleteBtn": "确认删除",
+      "newChat": "新对话",
+      "deleteSuccess": "删除成功",
+      "deleteSuccessDesc": "会话 \"{title}\" 已被删除",
+      "deleteFailed": "删除失败",
+      "unknownError": "未知错误"
+    },
+    "promptEditor": {
+      "title": "编辑提示词",
+      "placeholder": "请在此输入提示词..."
+    },
+    "discover": {
+      "title": "发现"
+    }
+  },
+  "mcp": {
+    "title": "MCP管理",
+    "subtitle": "管理和安装 MCP 应用，提升 AI 助手的能力",
+    "installedApps": "已安装应用",
+    "recommendedApps": "推荐应用",
+    "addNewApp": "添加新应用",
+    "refresh": "刷新",
+    "viewMore": "查看更多",
+    "helpDoc": "帮助文档",
+    "noInstalledApps": "暂无已安装的MCP应用，请点击\"添加新应用\"进行添加",
+    "loadingApps": "正在加载MCP应用列表...",
+    "status": {
+      "running": "运行中",
+      "stopped": "已停止"
+    },
+    "actions": {
+      "start": "启动服务",
+      "stop": "停止服务",
+      "edit": "编辑配置",
+      "delete": "删除",
+      "install": "安装此应用"
+    },
+    "messages": {
+      "refreshSuccess": "刷新成功",
+      "refreshSuccessDesc": "MCP服务器列表已更新",
+      "refreshFailed": "刷新失败",
+      "startSuccess": "启动成功",
+      "startSuccessDesc": "已启动 {name}",
+      "startFailed": "启动失败",
+      "stopSuccess": "停止成功",
+      "stopSuccessDesc": "已停止 {name}",
+      "stopFailed": "停止失败",
+      "deleteSuccess": "删除成功",
+      "deleteSuccessDesc": "已删除 {name}",
+      "deleteFailed": "删除失败",
+      "unknownError": "未知错误"
+    },
+    "dialog": {
+      "confirmDelete": "确认删除",
+      "confirmDeleteDesc": "您确定要删除 {name} 吗？此操作无法撤销。",
+      "cancel": "取消",
+      "delete": "删除"
+    },
+    "addNew": {
+      "title": {
+        "add": "添加新 MCP 应用",
+        "edit": "编辑 MCP 应用"
+      },
+      "form": {
+        "serverKey": "服务标识",
+        "serverKeyPlaceholder": "例如: filesystem, fetch",
+        "transportType": "传输类型",
+        "transportTypePlaceholder": "选择传输类型",
+        "command": "命令",
+        "commandPlaceholder": "例如: npx, node, uvx",
+        "args": "参数",
+        "argsPlaceholder": "每行一个参数\n例如:\n-y\n{'@'}modelcontextprotocol/server-filesystem\nC:/Users/Documents",
+        "argsHelp": "每行输入一个参数，无需逗号分隔",
+        "env": "环境变量",
+        "envPlaceholder": "每行一个环境变量，格式为 KEY=VALUE\n例如:\nNODE_ENV=production\nDEBUG=true",
+        "envHelp": "每行一个环境变量，格式为 KEY=VALUE",
+        "url": "URL",
+        "urlPlaceholder": "例如: https://mcp.example.com/sse",
+        "headers": "请求头",
+        "headersPlaceholder": "每行一个请求头，格式为 KEY: VALUE\n例如:\nAuthorization: Bearer token123\nContent-Type: application/json",
+        "headersHelp": "每行一个请求头，格式为 KEY: VALUE",
+        "enabled": "启用",
+        "enabledStatus": {
+          "enabled": "已启用",
+          "disabled": "已禁用"
+        }
+      },
+      "transportTypes": {
+        "stdio": "标准输入输出 (stdio)",
+        "sse": "服务器发送事件 (SSE)"
+      },
+      "readme": {
+        "urlPlaceholder": "https://github.com/repo/project/README.md",
+        "fetch": "获取",
+        "fetching": "获取中...",
+        "newMcpService": "新MCP服务"
+      },
+      "buttons": {
+        "autoFill": "AI自动填充 (Beta)",
+        "cancel": "取消",
+        "add": "添加",
+        "update": "更新",
+        "testConnection": "测试连接"
+      },
+      "validation": {
+        "serverKeyRequired": "服务标识不能为空",
+        "commandRequired": "命令不能为空",
+        "urlRequired": "URL不能为空",
+        "urlEmpty": "URL不能为空",
+        "urlEmptyDesc": "请输入有效的README URL"
+      },
+      "messages": {
+        "aiAnalyzing": "AI正在分析",
+        "aiAnalyzingDesc": "正在分析MCP信息并自动填充表单...",
+        "fillComplete": "填充完成",
+        "fillCompleteDesc": "AI已完成表单自动填充，请检查并修改",
+        "fetchSuccess": "获取成功",
+        "fetchSuccessDesc": "README内容已成功获取",
+        "fetchFailed": "获取失败",
+        "fetchFailedDesc": "无法获取README内容，请检查URL是否正确",
+        "validationFailed": "验证失败",
+        "addSuccess": "添加成功",
+        "addSuccessDesc": "MCP服务 {serverKey} 已添加",
+        "addFailed": "添加失败",
+        "updateSuccess": "更新成功",
+        "updateSuccessDesc": "MCP服务 {serverKey} 已更新",
+        "updateFailed": "更新失败",
+        "unknownError": "未知错误"
+      }
+    },
+    "config": {
+      "title": "MCP 配置文件",
+      "button": "配置文件",
+      "loading": "加载中...",
+      "filePath": "配置文件路径",
+      "buttons": {
+        "openDirectory": "打开目录",
+        "reset": "重置",
+        "format": "格式化",
+        "save": "保存",
+        "saving": "保存中..."
+      },
+      "messages": {
+        "pathFailed": "路径获取失败",
+        "pathFailedDesc": "无法获取配置文件路径",
+        "loadFailed": "加载失败",
+        "loadFailedDesc": "无法加载MCP配置文件",
+        "formatError": "格式错误",
+        "formatErrorDesc": "JSON格式不正确，无法格式化",
+        "formatErrorSave": "JSON格式不正确，请检查后重试",
+        "saveSuccess": "保存成功，正在重启服务",
+        "saveSuccessDesc": "MCP配置文件已更新",
+        "restartSuccess": "重启服务成功",
+        "restartFailed": "重启服务失败",
+        "saveFailed": "保存失败",
+        "saveFailedDesc": "无法保存MCP配置文件",
+        "unknownError": "未知错误"
+      }
+    },
+    "env": {
+      "title": "运行环境",
+      "dialogTitle": "运行环境检测",
+      "status": {
+        "installed": "已安装",
+        "notInstalled": "未安装"
+      },
+      "actions": {
+        "download": "下载",
+        "downloading": "下载中...",
+        "openDirectory": "打开目录"
+      },
+      "tools": {
+        "bun": {
+          "description": "JavaScript 运行时和工具链，用于执行 Node.js 相关任务"
+        },
+        "uv": {
+          "description": "Python 包管理器和虚拟环境工具，用于执行 Python 相关任务"
+        }
+      },
+      "installDirectory": "安装目录：",
+      "manualInstallTip": "提示：可将未安装的工具（{tools}）手动下载并放置到上述目录中"
+    }
+  },
+  "rag": {
+    "title": "知识库",
+    "sidebar": {
+      "title": "知识库",
+      "create": "新知识库",
+      "knowledgeBases": "知识库",
+      "noKnowledgeBases": "暂无知识库",
+      "description": "描述",
+      "isDefault": "默认知识库",
+      "createBaseDesc": "创建新的知识库",
+      "documents": "文档",
+      "edit": "编辑",
+      "delete": "删除",
+      "setDefault": "设为默认",
+      "chunkMethod": "分块方法",
+      "selectChunkMethod": "选择分块方法",
+      "chunkSize": "分块大小",
+      "chunkSizeDesc": "分块大小越大，生成的向量越精确，但是越耗资源",
+      "chunkOverlap": "分块重叠",
+      "chunkOverlapDesc": "分块重叠越大，生成的向量越精确，但是越耗资源",
+      "embeddingModel": "嵌入模型",
+      "embeddingModelType": "使用模型类型",
+      "selectEmbeddingModel": "选择嵌入模型",
+      "selectEmbeddingModelType": "选择嵌入模型",
+      "embeddingModelDesc": "嵌入模型用于将文本转换为向量",
+      "embeddingDimension": "嵌入维度",
+      "selectEmbeddingDimension": "选择嵌入维度",
+      "embeddingDimensionDesc": "嵌入维度越高，生成的向量越精确，但是越耗资源",
+      "textUnderstandingModel": "文本理解模型",
+      "selectTextModel": "选择文本理解模型",
+      "imageUnderstandingModel": "图像理解模型",
+      "selectImageModel": "选择图像理解模型",
+      "rerankEnabled": "启用重排",
+      "selectRerankModel": "选择重排模型",
+      "rerankModel": "重排模型",
+      "rerankModelDesc": "重排模型用于对搜索结果进行排序",
+      "moreConfig": "更多配置"
+    },
+    "document": {
+      "name": "文档名称",
+      "dataCount": "数据条数",
+      "status": "状态",
+      "statusReady": "就绪",
+      "statusIndexing": "处理中",
+      "statusFailed": "失败",
+      "statusPending": "待处理",
+      "statusUnknown": "未知",
+      "enabled": "启用",
+      "createdAt": "创建时间",
+      "actions": "操作",
+      "documentList": "文档列表",
+      "modelConfig": "模型配置",
+      "help": "帮助文档",
+      "unsupportedFileType": "不支持的文件类型",
+      "unsupportedFileTypeDesc": "请上传以下文件类型的文档：{fileTypes}",
+      "dragAndDrop": "拖放文件或文件夹",
+      "supportedFormats": "支持的文件格式",
+      "noBaseSelected": "请先选择一个知识库",
+      "pleaseSelectBase": "请先选择一个知识库",
+      "uploadSuccess": "上传成功",
+      "uploadSuccessDesc": "{count} 条数据已成功上传",
+      "uploadFailed": "上传失败",
+      "uploadFailedDesc": "{count} 条数据上传失败",
+      "uploadDocument": "上传文档",
+      "uploadDocumentDesc": "上传文档后，系统将自动将文档转换为向量并存储到数据库中",
+      "browseFiles": "浏览文件",
+      "upload": "上传",
+      "uploading": "上传中...",
+      "uploadingDesc": "正在上传文档，请稍候",
+      "chunks": "文档分片",
+      "chunksDesc": "查看文档被分割成的所有片段",
+      "chunkIndex": "片段索引",
+      "metadata": "元数据",
+      "noChunks": "该文档没有分片数据",
+      "fetchChunksFailed": "获取分片失败",
+      "chunksEmpty": "分片数据为空",
+      "chunksEmptyDesc": "该文档可能尚未处理完成"
+    }
+  },
+  "discover": {
+    "title": "发现",
+    "searchPlaceholder": "输入要搜索的内容...",
+    "mine": "我的",
+    "assistant": "助手",
+    "pageTitle": "探索精品智能体",
+    "pageDescription": "使用这些模板应用程序，或根据模板自定义您自己的应用程序。",
+    "categories": {
+      "translation": "翻译",
+      "all": "全部",
+      "academic": "学术",
+      "copywriting": "文案",
+      "design": "设计",
+      "commercial": "商业",
+      "programming": "编程",
+      "technology": "科技",
+      "music": "音乐",
+      "openSource": "开源",
+      "financial": "金融",
+      "medical": "医疗",
+      "legal": "法律",
+      "education": "教育",
+      "entertainment": "娱乐",
+      "government": "政府",
+      "other": "其他"
+    },
+    "assistants": {
+      "frenchTranslator": {
+        "title": "法语翻译助手",
+        "description": "友好、专业、富有同理心的法语翻译AI助手",
+        "type": "翻译",
+        "tags": ["翻译", "幽默", "文化"]
+      },
+      "codeHelper": {
+        "title": "代码助手",
+        "description": "专业的编程助手，精通多种编程语言和框架",
+        "type": "编程",
+        "tags": ["编程", "调试", "解释"]
+      },
+      "englishWriting": {
+        "title": "英语写作教练",
+        "description": "提供专业的英语写作指导和修改建议",
+        "type": "教育",
+        "tags": ["写作", "英语", "教育"]
+      },
+      "mentalHealth": {
+        "title": "心理健康顾问",
+        "description": "提供情感支持和心理健康建议的AI助手",
+        "type": "健康",
+        "tags": ["心理", "情感", "健康"]
+      },
+      "creativeWriting": {
+        "title": "创意写作助手",
+        "description": "激发灵感，协助创作小说、诗歌和各类创意内容",
+        "type": "写作",
+        "tags": ["创意", "写作", "灵感"]
+      },
+      "dataAnalysis": {
+        "title": "数据分析专家",
+        "description": "协助数据分析、统计和可视化的专业助手",
+        "type": "数据",
+        "tags": ["数据", "分析", "统计"]
+      },
+      "travelPlanner": {
+        "title": "旅行规划师",
+        "description": "帮助规划旅行路线、推荐景点和提供旅行建议",
+        "type": "生活",
+        "tags": ["旅行", "规划", "建议"]
+      },
+      "dietitian": {
+        "title": "健康饮食顾问",
+        "description": "提供营养均衡的饮食建议和健康食谱",
+        "type": "健康",
+        "tags": ["饮食", "健康", "营养"]
+      },
+      "japaneseCoach": {
+        "title": "日语学习教练",
+        "description": "专业的日语学习指导和练习伙伴",
+        "type": "教育",
+        "tags": ["日语", "学习", "语言"]
+      }
+    }
+  },
+  "settings": {
+    "modelFilter": {
+      "popular": "热门",
+      "installed": "已安装",
+      "searchPlaceholder": "deepseek..."
+    },
+    "title": "设置",
+    "language": "语言",
+    "theme": "主题",
+    "apiSettings": "API 设置",
+    "modelSettings": "模型设置",
+    "configureInterface": "配置您的软件界面",
+    "configureData": "管理存储与数据",
+    "system": "系统",
+    "light": "浅色",
+    "dark": "深色",
+    "modelSelect": {
+      "selectModel": "选择模型",
+      "noLocalModel": "未找到本地模型",
+      "configureModel": "去配置",
+      "clickToConfig": "点击去配置模型",
+      "localModel": "本地模型"
+    },
+    "apiModel": {
+      "modelProvider": "提供商",
+      "connectionSuccess": "连接成功",
+      "connectionSuccessDesc": "已成功连接到 API",
+      "connectionFailed": "连接失败",
+      "testConnection": "测试连接",
+      "testing": "测试中...",
+      "enableProvider": "开启后可在聊天中使用该服务商",
+      "modelConfig": "模型配置",
+      "apiKey": "API Key",
+      "apiUrl": "API URL",
+      "connectivityCheck": "连通性检查",
+      "selectModelToTest": "选择要测试连通性的模型",
+      "availableModels": "可用模型",
+      "enableModel": "开启后可在聊天中使用该模型"
+    },
+    "localModel": {
+      "serviceNotResponding": "服务未响应",
+      "serviceRunningNormal": "本地服务运行正常",
+      "installModelManager": "安装模型管理器",
+      "startModelManager": "启动模型管理器",
+      "stopModelManager": "停止模型管理器",
+      "refreshStatus": "刷新状态",
+      "modelManagement": "模型管理",
+      "moreModels": "更多模型?",
+      "installed": "已安装",
+      "confirmDeleteDesc": "此操作将删除模型 {model}，删除后需要重新下载才能使用。",
+      "deleting": "删除中...",
+      "confirmDelete": "确认删除",
+      "downloadOllama": "下载并安装 Ollama",
+      "downloadOllamaDesc": "点击确认将打开浏览器下载 Ollama。完成安装后请重启本软件以检查安装状态。",
+      "downloadNow": "马上下载",
+      "installSuccess": "{model} 安装成功",
+      "installSuccessDesc": "模型已安装成功，快去使用吧。",
+      "serviceNotRunning": "模型管理器未运行",
+      "serviceNotInstalled": "模型管理器未安装",
+      "syncModel": "同步Ollama最新模型",
+      "syncModelSuccess": "模型同步成功",
+      "syncModelSuccessDesc": "模型已同步成功，快去使用吧。",
+      "syncModelFailed": "模型同步失败",
+      "syncModelFailedDesc": "模型同步失败，请检查网络连接。"
+    },
+    "models": {
+      "localModel": "本地模型",
+      "apiModel": "API模型配置"
+    },
+    "sidebar": {
+      "models": "模型",
+      "localModel": "本地模型",
+      "apiModel": "API 模型",
+      "general": "通用",
+      "interface": "界面",
+      "about": "关于",
+      "data": "数据",
+      "proxy": "代理设置",
+      "playground": "Playground",
+      "voice": "语音",
+      "tts": "文本转语音"
+    },
+
+    "tts": {
+      "title": "文本转语音设置",
+      "voice": "音色",
+      "refresh": "刷新",
+      "currentLanguageVoices": "当前语言可用音色",
+      "selectVoice": "选择音色",
+      "testTextTitle": "测试文本",
+      "testText": "eechat 真棒，我很喜欢！"
+    },
+    "proxy": {
+      "title": "代理设置",
+      "enableProxy": "启用代理",
+      "enableProxyDesc": "启用后，应用将通过代理服务器连接网络",
+      "httpProxy": "HTTP代理",
+      "httpsProxy": "HTTPS代理",
+      "socksAddress": "Socks代理地址",
+      "socksPort": "Socks代理端口",
+      "portPlaceholder": "如 7890",
+      "socksUsername": "用户名(可选)",
+      "socksPassword": "密码(可选)",
+      "usernamePlaceholder": "如果代理需要认证请填写",
+      "passwordPlaceholder": "如果代理需要认证请填写",
+      "proxyPlaceholder": "例如: 127.0.0.1",
+      "getConfigFailed": "获取代理配置失败",
+      "updateSuccess": "更新代理配置成功",
+      "updateSuccessDesc": "代理配置已成功更新",
+      "updateFailed": "更新代理配置失败",
+      "enableSuccess": "启用代理成功",
+      "enableSuccessDesc": "代理已成功启用",
+      "enableFailed": "启用代理失败",
+      "disableSuccess": "禁用代理成功",
+      "disableSuccessDesc": "代理已成功禁用",
+      "disableFailed": "禁用代理失败"
+    },
+    "data": {
+      "title": "数据管理",
+      "config": {
+        "title": "配置",
+        "description": "管理系统配置文件"
+      },
+      "database": {
+        "title": "数据库",
+        "description": "您可以通过此目录来备份/恢复聊天内容"
+      },
+      "executable": {
+        "title": "可执行文件",
+        "description": "如 bun/uv 等运行环境，下载有误时可手动添加至此目录"
+      },
+      "logs": {
+        "title": "系统日志",
+        "description": "记录系统运行日志"
+      },
+      "openDirectory": "打开"
+    },
+    "about": {
+      "description": "一款简单易用，本地化部署的大模型工具。",
+      "star": "Star",
+      "accelerate": "加速开发"
+    }
+  }
+}
