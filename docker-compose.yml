@@ -1,0 +1,55 @@
+# BlackServer — Zero-Config RAG Stack
+# Generado automáticamente por black-server CLI
+
+services:
+  # ── Qdrant Vector Database ──────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant-blackmind
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_blackmind_storage:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+      QDRANT__SERVICE__GRPC_PORT: 6334
+      QDRANT__LOG_LEVEL: WARN
+      QDRANT__STORAGE__PERFORMANCE__MAX_SEARCH_THREADS: 4
+      QDRANT__STORAGE__OPTIMIZERS__DEFAULT_SEGMENT_NUMBER: 4
+      QDRANT__STORAGE__HNSW_INDEX__M: 16
+      QDRANT__STORAGE__HNSW_INDEX__EF_CONSTRUCT: 100
+      QDRANT__STORAGE__QUANTIZATION__ALWAYS_RAM: true
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/6333' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - blackmind-net
+
+  # ── Redis (Cache de Embeddings) ─────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: redis-blackmind
+    restart: unless-stopped
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - blackmind-net
+
+volumes:
+  qdrant_blackmind_storage:
+    driver: local
+
+networks:
+  blackmind-net:
+    driver: bridge
