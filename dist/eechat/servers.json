@@ -1,0 +1,14 @@
+[
+  {
+    "name": "主服务器1",
+    "url": "https://download.9tharts.com/update/"
+  },
+  {
+    "name": "主服务器2",
+    "url": "https://download.lza3.com/update/"
+  },
+  {
+    "name": "备用服务器A",
+    "url": "http://8.130.172.245/update/"
+  }
+]

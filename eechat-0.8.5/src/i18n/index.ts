@@ -1,25 +1,13 @@
 import { createI18n } from 'vue-i18n';
 import enUS from '../locales/en/index.json'
 import zhCN from '../locales/zh/index.json'
+import esES from '../locales/es/index.json'
 
-// 检测用户首选语言
-// const getBrowserLanguage = () => {
-//   const navigatorLanguage = navigator.language.toLowerCase();
-//   if (navigatorLanguage.startsWith('zh')) {
-//     return 'zh';
-//   }
-//   return 'en';
-// };
+type AvailableLanguages = 'en-US' | 'zh-CN' | 'es-ES'
 
-type AvailableLanguages = 'en-US' | 'zh-CN'
-
-// 从本地存储获取用户设置的语言
+// Default to Spanish for this deployment
 const getBrowserLanguage = (): AvailableLanguages => {
-  const navigatorLanguage = navigator.language.toLowerCase()
-  if (navigatorLanguage.startsWith('zh')) {
-    return 'zh-CN'
-  }
-  return 'en-US'
+  return 'es-ES'
 }
 
 const getSavedLanguage = (): AvailableLanguages => {
@@ -30,12 +18,13 @@ const getSavedLanguage = (): AvailableLanguages => {
 }
 
 const i18n = createI18n({
-  legacy: false, // 使用 Composition API 模式
+  legacy: false, // usar Composition API mode
   locale: getSavedLanguage(),
-  fallbackLocale: 'en-US',
+  fallbackLocale: 'es-ES',
   messages: {
     'en-US': enUS,
     'zh-CN': zhCN,
+    'es-ES': esES,
   },
 })
 

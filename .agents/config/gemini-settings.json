@@ -1,0 +1,1 @@
+{"security":{"auth":{"selectedType":"oauth-personal"}},"mcpServers":{"MCP_DOCKER":{"command":"docker","args":["mcp","gateway","run"]}}}

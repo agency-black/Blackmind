@@ -1,0 +1,88 @@
+{
+  "version": 3,
+  "skills": {
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/skills.git",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "skillFolderHash": "3013fdeb8a11b10b1eb795ec3ae8bfca38f7c26d",
+      "installedAt": "2026-03-27T21:34:50.468Z",
+      "updatedAt": "2026-03-27T21:34:50.468Z"
+    },
+    "zenmux-setup": {
+      "source": "ZenMux/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/ZenMux/skills.git",
+      "skillPath": "skills/zenmux-setup/SKILL.md",
+      "skillFolderHash": "08fc05af88b49a6bed85587fd6ce9dbba061bb93",
+      "pluginName": "zenmux-product",
+      "installedAt": "2026-04-04T22:05:19.911Z",
+      "updatedAt": "2026-04-04T22:05:19.911Z"
+    },
+    "zenmux-context": {
+      "source": "ZenMux/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/ZenMux/skills.git",
+      "skillPath": "skills/zenmux-context/SKILL.md",
+      "skillFolderHash": "7edd8875026d1f1d2b172958457a9b7aafa4ae17",
+      "pluginName": "zenmux-product",
+      "installedAt": "2026-04-04T22:05:20.033Z",
+      "updatedAt": "2026-04-04T22:05:20.033Z"
+    },
+    "zenmux-feedback": {
+      "source": "ZenMux/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/ZenMux/skills.git",
+      "skillPath": "skills/zenmux-feedback/SKILL.md",
+      "skillFolderHash": "479e8d668ab0a4deb3f65b00a69974efa8d285d6",
+      "pluginName": "zenmux-product",
+      "installedAt": "2026-04-04T22:05:20.149Z",
+      "updatedAt": "2026-04-04T22:05:20.149Z"
+    },
+    "zenmux-usage": {
+      "source": "ZenMux/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/ZenMux/skills.git",
+      "skillPath": "skills/zenmux-usage/SKILL.md",
+      "skillFolderHash": "61d8465a3f0afaa4d9643a2ecd4d5b11777e5a21",
+      "pluginName": "zenmux-management",
+      "installedAt": "2026-04-04T22:05:20.275Z",
+      "updatedAt": "2026-04-04T22:05:20.275Z"
+    },
+    "skill-creator": {
+      "source": "ZenMux/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/ZenMux/skills.git",
+      "skillPath": ".agents/skills/skill-creator/SKILL.md",
+      "skillFolderHash": "b180b9cbf0c1a4427621db1fcd1ad8edb0182b84",
+      "installedAt": "2026-04-04T22:05:20.392Z",
+      "updatedAt": "2026-04-04T22:05:20.392Z"
+    }
+  },
+  "dismissed": {
+    "findSkillsPrompt": true
+  },
+  "lastSelectedAgents": [
+    "amp",
+    "antigravity",
+    "cline",
+    "codex",
+    "cursor",
+    "deepagents",
+    "firebender",
+    "gemini-cli",
+    "github-copilot",
+    "kimi-cli",
+    "opencode",
+    "warp",
+    "claude-code",
+    "openclaw",
+    "kilo",
+    "kode",
+    "mistral-vibe",
+    "roo",
+    "mux",
+    "qwen-code"
+  ]
+}
