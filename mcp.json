@@ -1,0 +1,10 @@
+{
+    "mcpServers": {
+        "blackmind": {
+            "command": "node",
+            "args": [
+                "/Users/salvadoraguilar/Documents/GitHub/blackmind/Blackmind/blackmind-mcp/dist/index.js"
+            ]
+        }
+    }
+}
