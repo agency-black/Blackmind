@@ -6,6 +6,211 @@ const FlagsInitializer = require("./modules/FlagsInitializer");
 const WindowConfigurator = require("./modules/WindowConfigurator");
 const MemoryMonitor = require("./modules/MemoryMonitor");
 const DiagnosticsModule = require("./modules/DiagnosticsModule");
+const mcpServer = require("./mcp-server");
+
+// Iniciar servidor MCP
+mcpServer.start();
+
+const queryPath = path.join(app.getPath("userData"), "mcp-query.json");
+const responsePath = path.join(app.getPath("userData"), "mcp-response.json");
+const mcpBridgePollIntervalMs = 100;
+
+const toMcpText = (value) => ({
+  type: "text",
+  text: typeof value === "string" ? value : JSON.stringify(value, null, 2),
+});
+
+const buildWindowSnapshot = () => ({
+  mainWindow: {
+    exists: !!mainWindow,
+    isDestroyed: mainWindow ? mainWindow.isDestroyed() : true,
+    isVisible: mainWindow ? mainWindow.isVisible() : false,
+    bounds: mainWindow ? mainWindow.getBounds() : null,
+    url: mainWindow && !mainWindow.isDestroyed() ? mainWindow.webContents.getURL() : null,
+    title: mainWindow && !mainWindow.isDestroyed() ? mainWindow.getTitle() : null,
+  },
+  authPopupWindow: {
+    exists: !!authPopupWindow,
+    isDestroyed: authPopupWindow ? authPopupWindow.isDestroyed() : true,
+    isVisible: authPopupWindow ? authPopupWindow.isVisible() : false,
+    bounds: authPopupWindow ? authPopupWindow.getBounds() : null,
+  },
+  authPopupView: {
+    exists: !!authPopupView,
+    url: authPopupView?.webContents ? authPopupView.webContents.getURL() : null,
+  },
+  authPopupState,
+});
+
+const resolveTargetWebContents = (target = "main") => {
+  if (target === "auth") {
+    return authPopupView?.webContents || null;
+  }
+
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return null;
+  }
+
+  return mainWindow.webContents;
+};
+
+const resolveScreenshotTarget = (target = "auto") => {
+  if (target === "auth") {
+    return authPopupView?.webContents || null;
+  }
+
+  if (target === "main") {
+    return mainWindow || null;
+  }
+
+  return authPopupView?.webContents || mainWindow || null;
+};
+
+const buildAppInfo = () => ({
+  name: app.getName(),
+  version: app.getVersion(),
+  isPackaged: app.isPackaged,
+  platform: process.platform,
+  arch: process.arch,
+  pid: process.pid,
+  electron: process.versions.electron,
+  chrome: process.versions.chrome,
+  node: process.versions.node,
+  v8: process.versions.v8,
+  userDataPath: app.getPath("userData"),
+  hasDevServer: Boolean(process.env.VITE_DEV_SERVER_URL),
+  internalMcpEnabled: process.env.BLACKMIND_ENABLE_INTERNAL_MCP === "1",
+});
+
+const buildMemorySnapshot = () => ({
+  usage: memoryMonitor.getCurrentMemoryUsage(),
+  monitor: {
+    isRunning: memoryMonitor.isRunning,
+    thresholdMB: memoryMonitor.MEMORY_THRESHOLD_MB,
+    intervalMs: memoryMonitor.CHECK_INTERVAL_MS,
+  },
+});
+
+const buildUserDataPaths = () => ({
+  userDataPath: app.getPath("userData"),
+  queryPath,
+  responsePath,
+});
+
+mcpServer.onCallTool = async (name, args = {}) => {
+  if (name === "ping") {
+    return { content: [toMcpText({ ok: true, timestamp: new Date().toISOString(), app: buildAppInfo() })] };
+  }
+
+  if (name === "get_internal_logs") {
+    const limit = Number(args.limit || 50);
+    return {
+      content: [
+        toMcpText({
+          total: mcpServer.logs.length,
+          entries: mcpServer.logs.slice(-Math.max(1, Math.min(limit, 500))),
+        }),
+      ],
+    };
+  }
+
+  if (name === "get_window_status") {
+    return {
+      content: [toMcpText(buildWindowSnapshot())],
+    };
+  }
+
+  if (name === "get_app_info") {
+    return {
+      content: [toMcpText(buildAppInfo())],
+    };
+  }
+
+  if (name === "get_memory_usage") {
+    return {
+      content: [toMcpText(buildMemorySnapshot())],
+    };
+  }
+
+  if (name === "get_diagnostics_report") {
+    const report = await DiagnosticsModule.generateDiagnosticReport();
+    return {
+      content: [toMcpText(report || { error: "No se pudo generar el reporte de diagnóstico" })],
+    };
+  }
+
+  if (name === "get_user_data_paths") {
+    return {
+      content: [toMcpText(buildUserDataPaths())],
+    };
+  }
+
+  if (name === "eval_js") {
+    const targetContents = resolveTargetWebContents(args.target);
+    if (!targetContents) {
+      throw new Error("Vista de destino no encontrada. Verifica si la ventana solicitada está abierta.");
+    }
+
+    const result = await targetContents.executeJavaScript(args.code);
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "take_screenshot") {
+    const screenshotTarget = resolveScreenshotTarget(args.target);
+    if (!screenshotTarget) {
+      throw new Error("No hay ventanas activas para capturar.");
+    }
+
+    const image = await screenshotTarget.capturePage();
+    return {
+      content: [{
+        type: "image",
+        data: image.toPNG().toString("base64"),
+        mimeType: "image/png",
+      }],
+    };
+  }
+
+  throw new Error(`Herramienta MCP no soportada: ${name}`);
+};
+
+// Puente de comunicación para la IA (Antigravity)
+fs.mkdirSync(app.getPath("userData"), { recursive: true });
+for (const filePath of [queryPath, responsePath]) {
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify({}, null, 2), "utf-8");
+  }
+}
+
+fs.watchFile(queryPath, (curr, prev) => {
+  if (curr.mtime <= prev.mtime) return;
+  try {
+    const query = JSON.parse(fs.readFileSync(queryPath, "utf-8"));
+    if (!query?.name || !query?.requestId) {
+      return;
+    }
+
+    // Llamar directamente al manejador que definimos arriba
+    mcpServer.onCallTool(query.name, query.arguments).then(response => {
+      fs.writeFileSync(responsePath, JSON.stringify({
+        requestId: query.requestId,
+        payload: response || { content: [] },
+      }, null, 2));
+    }).catch(err => {
+      fs.writeFileSync(responsePath, JSON.stringify({
+        requestId: query.requestId,
+        payload: { error: err.message },
+      }, null, 2));
+    });
+  } catch (e) {
+    fs.writeFileSync(responsePath, JSON.stringify({
+      requestId: crypto.randomUUID(),
+      payload: { error: e.message },
+    }, null, 2));
+  }
+}, mcpBridgePollIntervalMs);
 
 let mainWindow;
 let lastClosedTab = null;
@@ -1231,6 +1436,14 @@ app.whenReady().then(async () => {
       } catch {
         return { action: "deny" };
       }
+    });
+
+    contents.on("did-fail-load", (event, errorCode, errorDescription, validatedURL) => {
+      mcpServer.addLog(`[Error] Fallo al cargar ${validatedURL}: ${errorDescription} (${errorCode})`);
+    });
+
+    contents.on("console-message", (event, level, message, line, sourceId) => {
+      mcpServer.addLog(`[Console] ${message} (en ${sourceId}:${line})`);
     });
 
     contents.on("will-attach-webview", (event, webPreferences, params) => {

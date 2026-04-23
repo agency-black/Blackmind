@@ -8,15 +8,18 @@
         "pnpm": ">=9.0.0"
     },
     "scripts": {
-        "dev": "vite --port 3000",
-        "dev:desktop": "concurrently -k \"npm:dev\" \"npm:dev:electron\" \"pnpm --dir ../.. run dev:channels\"",
-        "dev:electron": "wait-on tcp:3000 && VITE_DEV_SERVER_URL=http://127.0.0.1:3000 electron .",
-        "build": "vite build",
-        "preview": "vite preview",
-        "start": "npm run build && electron .",
-        "test": "jest",
-        "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage"
+    "dev": "vite --port 3000",
+    "dev:desktop": "concurrently -k \"npm:dev\" \"npm:dev:electron\" \"pnpm --dir ../.. run dev:channels\"",
+    "dev:electron": "wait-on tcp:3000 && VITE_DEV_SERVER_URL=http://127.0.0.1:3000 electron .",
+    "dev:electron:mcp": "BLACKMIND_ENABLE_INTERNAL_MCP=1 wait-on tcp:3000 && VITE_DEV_SERVER_URL=http://127.0.0.1:3000 electron .",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "npm run build && electron .",
+    "mcp:bridge": "node electron/mcp-bridge.js",
+    "mcp:stdio": "BLACKMIND_ENABLE_INTERNAL_MCP=1 electron .",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
     },
     "devDependencies": {
         "@babel/core": "^7.29.0",
@@ -46,6 +49,7 @@
         "wait-on": "^9.0.4"
     },
     "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.29.0",
         "@radix-ui/react-tabs": "^1.1.13",
         "@tsparticles/engine": "^3.9.1",
         "@tsparticles/react": "^3.0.0",
