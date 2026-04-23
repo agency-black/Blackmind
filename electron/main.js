@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session, Menu, shell, dialog, clipboard, nativeImage, safeStorage, WebContentsView } = require("electron");
+const { app, BrowserWindow, ipcMain, session, Menu, shell, dialog, clipboard, nativeImage, safeStorage, WebContentsView, webContents } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
@@ -7,9 +7,17 @@ const WindowConfigurator = require("./modules/WindowConfigurator");
 const MemoryMonitor = require("./modules/MemoryMonitor");
 const DiagnosticsModule = require("./modules/DiagnosticsModule");
 const mcpServer = require("./mcp-server");
+const { buildShellBridgeScript } = require("./mcp-shell-bridge");
+const { buildDomScript } = require("./mcp-page-scripts");
+const { BlackmindDevToolsManager } = require("./mcp-devtools-manager");
 
 // Iniciar servidor MCP
 mcpServer.start();
+
+const devToolsManager = new BlackmindDevToolsManager();
+const mcpState = {
+  selectedPageId: null,
+};
 
 const queryPath = path.join(app.getPath("userData"), "mcp-query.json");
 const responsePath = path.join(app.getPath("userData"), "mcp-response.json");
@@ -97,6 +105,228 @@ const buildUserDataPaths = () => ({
   responsePath,
 });
 
+const formatSnapshotText = (snapshot) => {
+  if (!snapshot) {
+    return "No snapshot available";
+  }
+
+  const header = [`Title: ${snapshot.title || ""}`, `URL: ${snapshot.url || ""}`];
+  const body = Array.isArray(snapshot.elements)
+    ? snapshot.elements.map((element) => {
+        const selected = snapshot.selectedElement?.uid === element.uid ? "*" : "-";
+        const descriptor = [element.tag, element.label, element.text]
+          .filter(Boolean)
+          .join(" | ");
+        return `${selected} [${element.uid}] ${descriptor}`;
+      })
+    : [];
+  return [...header, ...body].join("\n");
+};
+
+const keyAliasMap = {
+  Esc: "Escape",
+  Cmd: "Meta",
+  Command: "Meta",
+  Ctrl: "Control",
+  Return: "Enter",
+};
+
+const parseKeyCombination = (value) => {
+  const parts = String(value || "").split("+").map((part) => part.trim()).filter(Boolean);
+  if (parts.length === 0) {
+    throw new Error("Invalid key combination");
+  }
+
+  const key = keyAliasMap[parts.at(-1)] || parts.at(-1);
+  const modifiers = parts.slice(0, -1).map((part) => {
+    const normalized = keyAliasMap[part] || part;
+    if (normalized === "Meta") return "meta";
+    if (normalized === "Control") return "control";
+    if (normalized === "Shift") return "shift";
+    if (normalized === "Alt") return "alt";
+    return normalized.toLowerCase();
+  });
+
+  return { key, modifiers };
+};
+
+const buildCurrentPageFallback = async () => {
+  const pages = await listPagesForMcp();
+  if (mcpState.selectedPageId) {
+    const selected = pages.find((page) => page.id === mcpState.selectedPageId);
+    if (selected) return selected;
+  }
+  return pages.find((page) => page.active) || pages.find((page) => page.type === "dashboard") || pages[0] || null;
+};
+
+const ensureShellBridge = async () => {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    throw new Error("Main window not available");
+  }
+  await mainWindow.webContents.executeJavaScript(buildShellBridgeScript(), true);
+};
+
+const callShellBridge = async (expression) => {
+  await ensureShellBridge();
+  return mainWindow.webContents.executeJavaScript(expression, true);
+};
+
+const listPagesForMcp = async () => {
+  const pages = [];
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    pages.push({
+      id: "shell",
+      type: "shell",
+      title: "Blackmind Shell",
+      url: mainWindow.webContents.getURL(),
+      active: false,
+      visible: true,
+      webContentsId: mainWindow.webContents.id,
+    });
+
+    const shellPages = await callShellBridge("window.__blackmindMcpBridge.listPages()");
+    pages.push(...(Array.isArray(shellPages) ? shellPages : []));
+  }
+
+  if (authPopupView?.webContents) {
+    pages.push({
+      id: "auth",
+      type: "auth",
+      title: authPopupState?.title || "Auth Popup",
+      url: authPopupView.webContents.getURL(),
+      active: false,
+      visible: true,
+      webContentsId: authPopupView.webContents.id,
+    });
+  }
+
+  return pages.map((page, index) => ({
+    ...page,
+    index,
+    selected: page.id === mcpState.selectedPageId,
+  }));
+};
+
+const resolvePageDescriptor = async (args = {}) => {
+  const pages = await listPagesForMcp();
+  if (typeof args.index === "number") {
+    const byIndex = pages.find((page) => page.index === Number(args.index));
+    if (!byIndex) throw new Error(`Page index not found: ${args.index}`);
+    return byIndex;
+  }
+
+  if (args.pageId) {
+    const byId = pages.find((page) => page.id === args.pageId);
+    if (!byId) throw new Error(`Page not found: ${args.pageId}`);
+    return byId;
+  }
+
+  const fallback = await buildCurrentPageFallback();
+  if (!fallback) {
+    throw new Error("No pages available");
+  }
+  return fallback;
+};
+
+const getWebContentsForPage = (page) => {
+  if (!page) {
+    return null;
+  }
+  if (page.type === "shell") {
+    return mainWindow?.webContents || null;
+  }
+  if (page.type === "auth") {
+    return authPopupView?.webContents || null;
+  }
+  if (Number.isFinite(page.webContentsId)) {
+    return webContents.fromId(page.webContentsId) || null;
+  }
+  return null;
+};
+
+const selectPageForMcp = async (args = {}) => {
+  const page = await resolvePageDescriptor(args);
+  if (page.type === "dashboard" || page.type === "tab") {
+    const result = await callShellBridge(`window.__blackmindMcpBridge.selectPage(${JSON.stringify(page.id)})`);
+    if (!result) {
+      throw new Error(`Failed to select page ${page.id}`);
+    }
+  } else if (page.type === "auth") {
+    authPopupWindow?.focus();
+  } else if (page.type === "shell") {
+    mainWindow?.focus();
+  }
+
+  mcpState.selectedPageId = page.id;
+  return await resolvePageDescriptor({ pageId: page.id });
+};
+
+const runDomScript = async (page, mode, payload = {}) => {
+  const targetContents = getWebContentsForPage(page);
+  if (!targetContents) {
+    throw new Error(`No webContents available for page ${page.id}`);
+  }
+  return targetContents.executeJavaScript(buildDomScript(mode, payload), true);
+};
+
+const getElementSummary = async (page, descriptor = {}) => {
+  return runDomScript(page, "element-summary", descriptor);
+};
+
+const sendMouseClick = async (targetContents, point) => {
+  targetContents.focus();
+  targetContents.sendInputEvent({ type: "mouseMove", x: point.centerX, y: point.centerY });
+  targetContents.sendInputEvent({ type: "mouseDown", x: point.centerX, y: point.centerY, button: "left", clickCount: 1 });
+  targetContents.sendInputEvent({ type: "mouseUp", x: point.centerX, y: point.centerY, button: "left", clickCount: 1 });
+};
+
+const sendMouseHover = async (targetContents, point) => {
+  targetContents.focus();
+  targetContents.sendInputEvent({ type: "mouseMove", x: point.centerX, y: point.centerY });
+};
+
+const sendMouseDrag = async (targetContents, sourcePoint, targetPoint) => {
+  targetContents.focus();
+  targetContents.sendInputEvent({ type: "mouseMove", x: sourcePoint.centerX, y: sourcePoint.centerY });
+  targetContents.sendInputEvent({ type: "mouseDown", x: sourcePoint.centerX, y: sourcePoint.centerY, button: "left", clickCount: 1 });
+  targetContents.sendInputEvent({ type: "mouseMove", x: targetPoint.centerX, y: targetPoint.centerY });
+  targetContents.sendInputEvent({ type: "mouseUp", x: targetPoint.centerX, y: targetPoint.centerY, button: "left", clickCount: 1 });
+};
+
+const uploadFilesToPage = async (page, args = {}) => {
+  const targetContents = getWebContentsForPage(page);
+  if (!targetContents) {
+    throw new Error(`No webContents available for page ${page.id}`);
+  }
+
+  await devToolsManager.ensureSession(targetContents);
+  const selector = args.selector || `[data-blackmind-mcp-id="${args.uid}"]`;
+  const evaluation = await targetContents.debugger.sendCommand("Runtime.evaluate", {
+    expression: `document.querySelector(${JSON.stringify(selector)})`,
+    objectGroup: "blackmind-mcp-upload",
+  });
+
+  if (!evaluation.result?.objectId) {
+    throw new Error("File input element not found");
+  }
+
+  const node = await targetContents.debugger.sendCommand("DOM.requestNode", {
+    objectId: evaluation.result.objectId,
+  });
+
+  await targetContents.debugger.sendCommand("DOM.setFileInputFiles", {
+    nodeId: node.nodeId,
+    files: (args.files || []).map((filePath) => path.resolve(filePath)),
+  });
+
+  await targetContents.debugger.sendCommand("Runtime.releaseObjectGroup", {
+    objectGroup: "blackmind-mcp-upload",
+  }).catch(() => {});
+
+  return getElementSummary(page, { selector, uid: args.uid });
+};
+
 mcpServer.onCallTool = async (name, args = {}) => {
   if (name === "ping") {
     return { content: [toMcpText({ ok: true, timestamp: new Date().toISOString(), app: buildAppInfo() })] };
@@ -145,6 +375,70 @@ mcpServer.onCallTool = async (name, args = {}) => {
     };
   }
 
+  if (name === "list_pages") {
+    const pages = await listPagesForMcp();
+    return {
+      content: [toMcpText(pages)],
+    };
+  }
+
+  if (name === "select_page") {
+    const selectedPage = await selectPageForMcp(args);
+    return {
+      content: [toMcpText(selectedPage)],
+    };
+  }
+
+  if (name === "new_page") {
+    const page = await callShellBridge(`window.__blackmindMcpBridge.newPage(${JSON.stringify(args.url || "https://www.google.com")}, ${JSON.stringify({
+      pane: args.pane === "right" ? "right" : "left",
+      autoSplit: args.pane === "right",
+    })})`);
+    if (!page) {
+      throw new Error("Failed to create page");
+    }
+    mcpState.selectedPageId = page.id;
+    return {
+      content: [toMcpText(page)],
+    };
+  }
+
+  if (name === "close_page") {
+    const page = await resolvePageDescriptor(args);
+    const result = page.type === "auth"
+      ? (authPopupWindow ? (closeAuthPopup(), { closed: true }) : { closed: false, reason: "Auth popup not open" })
+      : await callShellBridge(`window.__blackmindMcpBridge.closePage(${JSON.stringify(page.id)})`);
+    if (mcpState.selectedPageId === page.id) {
+      mcpState.selectedPageId = null;
+    }
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "navigate_page") {
+    const page = await resolvePageDescriptor(args);
+    if (page.type === "auth") {
+      const targetContents = getWebContentsForPage(page);
+      if (!targetContents) {
+        throw new Error("Auth popup is not available");
+      }
+      if (args.action === "reload") await targetContents.reload();
+      if (args.action === "back" && targetContents.canGoBack()) targetContents.goBack();
+      if (args.action === "forward" && targetContents.canGoForward()) targetContents.goForward();
+      if (args.url) await targetContents.loadURL(args.url);
+      return { content: [toMcpText({ ok: true, pageId: page.id, url: targetContents.getURL() })] };
+    }
+
+    const result = await callShellBridge(`window.__blackmindMcpBridge.navigatePage(${JSON.stringify(page.id)}, ${JSON.stringify({
+      action: args.action || null,
+      url: args.url || null,
+    })})`);
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
   if (name === "eval_js") {
     const targetContents = resolveTargetWebContents(args.target);
     if (!targetContents) {
@@ -157,7 +451,165 @@ mcpServer.onCallTool = async (name, args = {}) => {
     };
   }
 
+  if (name === "evaluate_script") {
+    const page = await resolvePageDescriptor(args);
+    const targetContents = getWebContentsForPage(page);
+    if (!targetContents) {
+      throw new Error(`No webContents available for page ${page.id}`);
+    }
+    const result = await targetContents.executeJavaScript(args.code, true);
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "take_snapshot") {
+    const page = await resolvePageDescriptor(args);
+    const snapshot = await runDomScript(page, "snapshot", { limit: args.limit });
+    return {
+      content: [toMcpText({ ...snapshot, snapshotText: formatSnapshotText(snapshot) })],
+    };
+  }
+
+  if (name === "point_event_select") {
+    const page = await resolvePageDescriptor(args);
+    const selected = await runDomScript(page, "point-select", { x: args.x, y: args.y });
+    return {
+      content: [toMcpText(selected)],
+    };
+  }
+
+  if (name === "click") {
+    const page = await resolvePageDescriptor(args);
+    const targetContents = getWebContentsForPage(page);
+    const summary = await getElementSummary(page, args);
+    if (!summary?.rect) {
+      throw new Error("Element not found for click");
+    }
+    await sendMouseClick(targetContents, summary.rect);
+    return {
+      content: [toMcpText(summary)],
+    };
+  }
+
+  if (name === "hover") {
+    const page = await resolvePageDescriptor(args);
+    const targetContents = getWebContentsForPage(page);
+    const summary = await getElementSummary(page, args);
+    if (!summary?.rect) {
+      throw new Error("Element not found for hover");
+    }
+    await sendMouseHover(targetContents, summary.rect);
+    return {
+      content: [toMcpText(summary)],
+    };
+  }
+
+  if (name === "drag") {
+    const page = await resolvePageDescriptor(args);
+    const targetContents = getWebContentsForPage(page);
+    const source = await getElementSummary(page, { uid: args.sourceUid, selector: args.sourceSelector });
+    const target = await getElementSummary(page, { uid: args.targetUid, selector: args.targetSelector });
+    if (!source?.rect || !target?.rect) {
+      throw new Error("Source or target element not found for drag");
+    }
+    await sendMouseDrag(targetContents, source.rect, target.rect);
+    return {
+      content: [toMcpText({ source, target })],
+    };
+  }
+
+  if (name === "fill") {
+    const page = await resolvePageDescriptor(args);
+    const result = await runDomScript(page, "fill", args);
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "fill_form") {
+    const page = await resolvePageDescriptor(args);
+    const result = await runDomScript(page, "fill-form", { fields: args.fields });
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "type_text") {
+    const page = await resolvePageDescriptor(args);
+    const result = await runDomScript(page, "type-text", { text: args.text });
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "press_key") {
+    const page = await resolvePageDescriptor(args);
+    const targetContents = getWebContentsForPage(page);
+    if (!targetContents) {
+      throw new Error(`No webContents available for page ${page.id}`);
+    }
+    const { key, modifiers } = parseKeyCombination(args.key);
+    targetContents.focus();
+    targetContents.sendInputEvent({ type: "keyDown", keyCode: key, modifiers });
+    if (key.length === 1 && modifiers.length === 0) {
+      targetContents.sendInputEvent({ type: "char", keyCode: key });
+    }
+    targetContents.sendInputEvent({ type: "keyUp", keyCode: key, modifiers });
+    return {
+      content: [toMcpText({ ok: true, key, modifiers })],
+    };
+  }
+
+  if (name === "upload_file") {
+    const page = await resolvePageDescriptor(args);
+    const result = await uploadFilesToPage(page, args);
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "wait_for") {
+    const page = await resolvePageDescriptor(args);
+    const result = await runDomScript(page, "wait-for", args);
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
   if (name === "take_screenshot") {
+    if (typeof args.index === "number" || args.pageId || args.selector || args.uid) {
+      const page = await resolvePageDescriptor(args);
+      const targetContents = getWebContentsForPage(page);
+      if (!targetContents) {
+        throw new Error(`No webContents available for page ${page.id}`);
+      }
+
+      let image;
+      if (args.selector || args.uid) {
+        const summary = await getElementSummary(page, args);
+        if (!summary?.rect) {
+          throw new Error("Element not found for screenshot");
+        }
+        image = await targetContents.capturePage({
+          x: summary.rect.x,
+          y: summary.rect.y,
+          width: summary.rect.width,
+          height: summary.rect.height,
+        });
+      } else {
+        image = await targetContents.capturePage();
+      }
+
+      return {
+        content: [{
+          type: "image",
+          data: image.toPNG().toString("base64"),
+          mimeType: "image/png",
+        }],
+      };
+    }
+
     const screenshotTarget = resolveScreenshotTarget(args.target);
     if (!screenshotTarget) {
       throw new Error("No hay ventanas activas para capturar.");
@@ -170,6 +622,104 @@ mcpServer.onCallTool = async (name, args = {}) => {
         data: image.toPNG().toString("base64"),
         mimeType: "image/png",
       }],
+    };
+  }
+
+  if (name === "resize_page") {
+    if (!mainWindow) {
+      throw new Error("Main window not available");
+    }
+    mainWindow.setContentSize(Number(args.width), Number(args.height));
+    return {
+      content: [toMcpText({ ok: true, bounds: mainWindow.getBounds() })],
+    };
+  }
+
+  if (name === "list_console_messages") {
+    const page = await resolvePageDescriptor(args);
+    const messages = await devToolsManager.listConsoleMessages(getWebContentsForPage(page));
+    return {
+      content: [toMcpText(messages)],
+    };
+  }
+
+  if (name === "get_console_message") {
+    const page = await resolvePageDescriptor(args);
+    const message = await devToolsManager.getConsoleMessage(getWebContentsForPage(page), args.id);
+    return {
+      content: [toMcpText(message)],
+    };
+  }
+
+  if (name === "list_network_requests") {
+    const page = await resolvePageDescriptor(args);
+    const requests = await devToolsManager.listNetworkRequests(getWebContentsForPage(page));
+    return {
+      content: [toMcpText(requests)],
+    };
+  }
+
+  if (name === "get_network_request") {
+    const page = await resolvePageDescriptor(args);
+    const request = await devToolsManager.getNetworkRequest(getWebContentsForPage(page), args.reqid);
+    return {
+      content: [toMcpText(request)],
+    };
+  }
+
+  if (name === "handle_dialog") {
+    const page = await resolvePageDescriptor(args);
+    const result = await devToolsManager.handleDialog(getWebContentsForPage(page), args);
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "emulate") {
+    const page = await resolvePageDescriptor(args);
+    const result = await devToolsManager.emulate(getWebContentsForPage(page), args);
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "performance_start_trace") {
+    const page = await resolvePageDescriptor(args);
+    const result = await devToolsManager.startTrace(getWebContentsForPage(page));
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "performance_stop_trace") {
+    const page = await resolvePageDescriptor(args);
+    const result = await devToolsManager.stopTrace(getWebContentsForPage(page));
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "performance_analyze_insight") {
+    const page = await resolvePageDescriptor(args);
+    const result = await devToolsManager.analyzeInsight(getWebContentsForPage(page), args.insight);
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "take_memory_snapshot") {
+    const page = await resolvePageDescriptor(args);
+    const result = await devToolsManager.takeMemorySnapshot(getWebContentsForPage(page));
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "lighthouse_audit") {
+    const page = await resolvePageDescriptor(args);
+    const result = await devToolsManager.lighthouseAudit(getWebContentsForPage(page));
+    return {
+      content: [toMcpText(result)],
     };
   }
 
