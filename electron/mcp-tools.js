@@ -179,6 +179,42 @@ const MCP_TOOL_DEFINITIONS = [
     },
   },
   {
+    name: "start_point_picker",
+    description: "Activa un modo visual para seleccionar un elemento con click dentro de la página.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        index: { type: "number", minimum: 0 },
+        pageId: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "stop_point_picker",
+    description: "Desactiva el modo visual de selección de elementos.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        index: { type: "number", minimum: 0 },
+        pageId: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_selected_element",
+    description: "Devuelve el último elemento seleccionado manualmente o por point event.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        index: { type: "number", minimum: 0 },
+        pageId: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: "click",
     description: "Hace click sobre el elemento indicado por uid o selector.",
     inputSchema: {
@@ -323,6 +359,33 @@ const MCP_TOOL_DEFINITIONS = [
         index: { type: "number", minimum: 0 },
         pageId: { type: "string" },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "scrape_page",
+    description: "Extrae contenido útil de la página actual: título, meta, headings, texto y enlaces.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        index: { type: "number", minimum: 0 },
+        pageId: { type: "string" },
+        maxLinks: { type: "number", minimum: 1, maximum: 200 },
+        maxTextLength: { type: "number", minimum: 100, maximum: 50000 },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "web_search",
+    description: "Realiza una búsqueda web simple y devuelve resultados resumidos.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        maxResults: { type: "number", minimum: 1, maximum: 20 },
+      },
+      required: ["query"],
       additionalProperties: false,
     },
   },

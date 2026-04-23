@@ -327,6 +327,68 @@ const uploadFilesToPage = async (page, args = {}) => {
   return getElementSummary(page, { selector, uid: args.uid });
 };
 
+const stripHtml = (value = "") => value
+  .replace(/<script[\s\S]*?<\/script>/gi, " ")
+  .replace(/<style[\s\S]*?<\/style>/gi, " ")
+  .replace(/<[^>]+>/g, " ")
+  .replace(/&nbsp;/g, " ")
+  .replace(/&amp;/g, "&")
+  .replace(/&quot;/g, '"')
+  .replace(/&#39;/g, "'")
+  .replace(/\\s+/g, " ")
+  .trim();
+
+const webSearch = async (query, maxResults = 5) => {
+  const endpoint = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+  const response = await fetch(endpoint, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+      "Accept-Language": "es-MX,es;q=0.9,en;q=0.8",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Search request failed with status ${response.status}`);
+  }
+
+  const html = await response.text();
+  const results = [];
+  const pattern = /<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+  let match;
+
+  while ((match = pattern.exec(html)) && results.length < maxResults) {
+    const rawUrl = match[1];
+    const title = stripHtml(match[2]);
+    if (!title || !rawUrl) {
+      continue;
+    }
+
+    let url = rawUrl;
+    try {
+      const parsed = new URL(rawUrl, "https://html.duckduckgo.com");
+      const uddg = parsed.searchParams.get("uddg");
+      if (uddg) {
+        url = decodeURIComponent(uddg);
+      } else {
+        url = parsed.toString();
+      }
+    } catch {
+      // Keep raw URL as fallback.
+    }
+
+    results.push({
+      title,
+      url,
+    });
+  }
+
+  return {
+    query,
+    engine: "duckduckgo-html",
+    results,
+  };
+};
+
 mcpServer.onCallTool = async (name, args = {}) => {
   if (name === "ping") {
     return { content: [toMcpText({ ok: true, timestamp: new Date().toISOString(), app: buildAppInfo() })] };
@@ -479,6 +541,30 @@ mcpServer.onCallTool = async (name, args = {}) => {
     };
   }
 
+  if (name === "start_point_picker") {
+    const page = await resolvePageDescriptor(args);
+    const result = await runDomScript(page, "start-point-picker");
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "stop_point_picker") {
+    const page = await resolvePageDescriptor(args);
+    const result = await runDomScript(page, "stop-point-picker");
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "get_selected_element") {
+    const page = await resolvePageDescriptor(args);
+    const result = await runDomScript(page, "get-selected-element");
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
   if (name === "click") {
     const page = await resolvePageDescriptor(args);
     const targetContents = getWebContentsForPage(page);
@@ -572,6 +658,24 @@ mcpServer.onCallTool = async (name, args = {}) => {
   if (name === "wait_for") {
     const page = await resolvePageDescriptor(args);
     const result = await runDomScript(page, "wait-for", args);
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "scrape_page") {
+    const page = await resolvePageDescriptor(args);
+    const result = await runDomScript(page, "scrape-page", {
+      maxLinks: args.maxLinks,
+      maxTextLength: args.maxTextLength,
+    });
+    return {
+      content: [toMcpText(result)],
+    };
+  }
+
+  if (name === "web_search") {
+    const result = await webSearch(String(args.query || ""), Number(args.maxResults || 5));
     return {
       content: [toMcpText(result)],
     };
