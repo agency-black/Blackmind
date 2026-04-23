@@ -11,6 +11,12 @@
  * - Principio de menor privilegio
  */
 
+// Trasplante de Brave: Burlar detección de Google / Webdriver en la ventana de Auth
+try {
+  Object.defineProperty(navigator, 'webdriver', { get: () => false });
+  Object.defineProperty(navigator, 'languages', { get: () => ['es-419', 'es', 'en-US', 'en'] });
+} catch (e) {}
+
 const { contextBridge, ipcRenderer } = require('electron');
 
 // Solo exponer APIs mínimas para control del popup de autenticación

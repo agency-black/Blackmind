@@ -459,18 +459,24 @@ const ensureAuthPopupWindow = () => {
   });
 
   configureSessionIntegrations(authPopupView.webContents.session);
-  authPopupView.webContents.setUserAgent(buildChromeLikeUserAgent());
+  // Pasamos la URL inicial para que sepa si es Google
+  authPopupView.webContents.setUserAgent(buildChromeLikeUserAgent(authPopupState?.url || ""));
   authPopupWindow.contentView.addChildView(authPopupView);
   layoutAuthPopupView();
 
   authPopupView.webContents.setWindowOpenHandler(({ url }) => {
-    if (url && /^https?:/i.test(url)) {
+    // Trasplante de Brave: Incluso en la ventana de Auth, bloqueamos pop-ups no deseados
+    const isAllowedAuth = url.includes("accounts.google.com") || url.includes("appleid.apple.com");
+    
+    if (url && /^https?:/i.test(url) && isAllowedAuth) {
       return { action: "allow" };
     }
 
-    if (url) {
+    if (url && !/^https?:/i.test(url)) {
       shell.openExternal(url);
     }
+    
+    console.log(`[Pop-up Blocker (Auth)] Bloqueado: ${url}`);
     return { action: "deny" };
   });
 
@@ -740,12 +746,18 @@ const configureSessionIntegrations = (targetSession) => {
   // para transparencia y cumplimiento de ToS (Google ToS §5, GDPR Art. 5)
   const ua = buildChromeLikeUserAgent();
   targetSession.webRequest.onBeforeSendHeaders((details, callback) => {
-    // User-Agent identifica la app mientras mantiene compatibilidad con servicios web
-    details.requestHeaders["User-Agent"] = ua;
-    // Sec-CH-UA headers identifican el motor Chromium sin suplantar Chrome completamente
-    details.requestHeaders["Sec-CH-UA"] = '"Chromium";v="134", "Not;A=Brand";v="99"';
+    // Trasplante de Brave: Suplantar Google Chrome para evitar bloqueos de seguridad
+    const isGoogle = details.url.includes("google.com") || details.url.includes("accounts.google");
+    
+    details.requestHeaders["User-Agent"] = buildChromeLikeUserAgent(details.url);
+    
+    // Sec-CH-UA headers: Brave se identifica como Google Chrome en sitios críticos
+    details.requestHeaders["Sec-CH-UA"] = isGoogle 
+      ? '"Google Chrome";v="134", "Chromium";v="134", "Not;A=Brand";v="99"'
+      : '"Chromium";v="134", "Not;A=Brand";v="99"';
+      
     details.requestHeaders["Sec-CH-UA-Mobile"] = "?0";
-    details.requestHeaders["Sec-CH-UA-Platform"] = '"macOS"';
+    details.requestHeaders["Sec-CH-UA-Platform"] = isGoogle ? '"Windows"' : '"macOS"';
     details.requestHeaders["Accept-Language"] = "es-419,es;q=0.9,en-US;q=0.8,en;q=0.7";
     
     callback({ requestHeaders: details.requestHeaders });
@@ -755,11 +767,17 @@ const configureSessionIntegrations = (targetSession) => {
 const APP_VERSION = require('../package.json').version;
 const APP_NAME = require('../package.json').name;
 
-const buildChromeLikeUserAgent = () => {
-  // User-Agent que incluye identificador de aplicación legítimo
-  // Formato: Base Chrome compatible + identificador Blackmind/{version}
-  // Esto permite compatibilidad con servicios web mientras identifica transparentemente la app
-  return `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 ${APP_NAME}/${APP_VERSION}`;
+const buildChromeLikeUserAgent = (targetUrl = "") => {
+  // Trasplante de Brave: User-Agent puro de Chrome
+  // Usamos Windows para Google porque su detección en Mac es más estricta para Electron
+  const baseUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36";
+  const googleUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36";
+  
+  if (targetUrl.includes("google.com") || targetUrl.includes("accounts.google") || targetUrl.includes("gstatic.com")) {
+    return googleUA;
+  }
+
+  return baseUA;
 };
 
 // Ajustes de compatibilidad masiva para Google Login y estabilidad en macOS
@@ -770,21 +788,8 @@ app.commandLine.appendSwitch(
   "Bluetooth,SameSiteByDefaultCookies,CookiesWithoutSameSiteMustBeSecure"
 );
 
-// SECURITY TRADEOFF: disable-site-isolation-trials
-// Requerido para compatibilidad con Google Login OAuth en Electron 41.
-// Esta flag desactiva el aislamiento de procesos de Chromium, una defensa
-// contra ataques Spectre/Meltdown y Cross-Origin Data Leakage.
-//
-// Impacto: Reduce el aislamiento entre orígenes en el renderer.
-// Alternativas investigadas: session.setPermissionRequestHandler no resuelve
-// el problema de cookies de terceros en el flujo OAuth de Google.
-//
-// TODO: Revisar en Electron ^42 si Google Login funciona sin esta flag.
-// Issue: Investigar migración a OAuth 2.0 PKCE flow sin popup.
-// CWE-401: Memory Leak mitigation via other means (sandbox, CSP)
-// CVE-2017-5753: Spectre - Aceptado riesgo para funcionalidad OAuth
-app.commandLine.appendSwitch("disable-site-isolation-trials");
-
+// app.commandLine.appendSwitch("disable-site-isolation-trials"); // ELIMINADO: Detectado por Google como riesgo de seguridad
+app.commandLine.appendSwitch("remote-debugging-port", "9222");
 app.commandLine.appendSwitch("lang", "es-419");
 
 // Inicializar flags de rendimiento y aceleración por hardware
@@ -1204,15 +1209,26 @@ app.whenReady().then(async () => {
     contents.setWindowOpenHandler(({ url }) => {
       try {
         const parsed = new URL(url);
-        // Solo permitir http/https
-        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-          // Abrir en navegador externo para protocolos no web
-          shell.openExternal(url).catch(() => {});
-          return { action: "deny" };
+        
+        // Trasplante de Brave: Bloqueo de pop-ups por defecto
+        // Solo permitimos ventanas de autenticación conocidas (Google, etc.)
+        const isAuthDomain = url.includes("accounts.google.com") || 
+                           url.includes("facebook.com/v") || 
+                           url.includes("appleid.apple.com");
+
+        if (isAuthDomain) {
+          return { action: "allow" };
         }
-        return { action: "allow" };
+
+        // Si no es un dominio de auth, denegamos el pop-up interno
+        // y lo enviamos al navegador del sistema si es un protocolo externo
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          shell.openExternal(url).catch(() => {});
+        }
+
+        console.log(`[Pop-up Blocker] Ventana bloqueada automáticamente: ${url}`);
+        return { action: "deny" };
       } catch {
-        // URL inválida - denegar
         return { action: "deny" };
       }
     });

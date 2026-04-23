@@ -1,9 +1,0 @@
-# owner: your-github-username
-# repo: your-repo-name
-# provider: generic
-# url: http://localhost:8080/
-# channel: latest
-
-owner: Lucassssss
-repo: eechat
-provider: github
